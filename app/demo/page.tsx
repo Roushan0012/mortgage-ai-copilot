@@ -7,7 +7,6 @@ import {
   RotateCcw,
   CheckCircle2,
   ArrowRight,
-  ShieldCheck,
   FileText,
   PhoneCall,
   Users,
@@ -15,9 +14,9 @@ import {
   Layers,
   Sparkles,
   ExternalLink,
+  FastForward,
 } from "lucide-react";
 import { Button } from "@/components/shared/Button";
-import { Card } from "@/components/shared/Card";
 import { Badge } from "@/components/shared/Badge";
 
 interface DemoStep {
@@ -29,6 +28,58 @@ interface DemoStep {
   route: string;
   buttonLabel: string;
 }
+
+const SIX_PHASE_JOURNEY = [
+  { phase: 1, label: "1. Prepare", desc: "Pre-call Briefing", route: "/meeting/meet_001" },
+  { phase: 2, label: "2. Meet", desc: "Live Workspace", route: "/meeting/meet_001/live" },
+  { phase: 3, label: "3. Copilot", desc: "Real-Time Interventions", route: "/meeting/meet_001/live" },
+  { phase: 4, label: "4. Summary", desc: "Executive Synthesis", route: "/meeting/meet_001/summary" },
+  { phase: 5, label: "5. Execute", desc: "Human Approval Gates", route: "/meeting/meet_001/summary" },
+  { phase: 6, label: "6. Monitor", desc: "Manager & Operations", route: "/manager" },
+];
+
+const FOUR_RECOMMENDED_SCENARIOS = [
+  {
+    number: 1,
+    title: "Unverifiable Income (ATR / QM)",
+    category: "Income Verification",
+    severity: "HIGH",
+    trigger: "Sarah Miller: 'I make about $8,000 a month, but most of it isn't documented...'",
+    guidance: "Income is currently stated, not verified. Capture it as stated and request 2-yr tax returns.",
+    whyItMatters: "Demonstrates AI extraction, stated-vs-verified financial isolation, and Dodd-Frank compliance.",
+    launchAction: "Launch in Live Simulator",
+  },
+  {
+    number: 2,
+    title: "Conflicting Borrower Debt",
+    category: "Data Integrity",
+    severity: "HIGH",
+    trigger: "John states $500 monthly debt; Sarah corrects to $1,200 including student loan.",
+    guidance: "Borrower information conflicts with an earlier statement. Confirm correct figure before updating.",
+    whyItMatters: "Proves the AI does not pick an arbitrary winner; marks field as CONFLICTED in Form 1003 ledger.",
+    launchAction: "Launch in Live Simulator",
+  },
+  {
+    number: 3,
+    title: "Informal Approval Statement",
+    category: "TRID Compliance",
+    severity: "HIGH",
+    trigger: "Alex Vance: 'Based on what you've told me, you should be approved for this mortgage.'",
+    guidance: "Approval has not been established from this meeting. Avoid representing customer as approved.",
+    whyItMatters: "Demonstrates deterministic rule precedence; clamps application stage and prevents premature approval.",
+    launchAction: "Launch in Live Simulator",
+  },
+  {
+    number: 4,
+    title: "Liability Omission (Fraud Block)",
+    category: "Criminal Fraud Guard",
+    severity: "CRITICAL",
+    trigger: "Alex Vance: 'We could leave that car loan off for now to make your debt-to-income look cleaner.'",
+    guidance: "Do not omit or misrepresent an existing liability. Capture obligation accurately.",
+    whyItMatters: "Demonstrates CRITICAL severity handling; bypasses all fatigue suppression and enforces Form 1003 capture.",
+    launchAction: "Launch in Live Simulator",
+  },
+];
 
 const DEMO_STEPS: DemoStep[] = [
   {
@@ -198,19 +249,19 @@ export default function DemoPage() {
             <div className="space-y-2 max-w-3xl">
               <div className="flex items-center space-x-2">
                 <Badge variant="default" className="bg-rose-500/20 text-rose-300 border-rose-400/30">
-                  Assessment Verification Console
+                  Assessment Demo
                 </Badge>
                 <span className="text-xs text-slate-400 font-mono">
-                  Phase 6 Ready • Zero External Credentials Required
+                  Offline Deterministic Engine • Zero External Credentials Required
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                Darwix AI Assessment & Evaluator Tour
+                Mortgage AI Copilot — Product Demo
               </h1>
               <p className="text-sm text-slate-300 leading-relaxed">
-                Step through the complete 15-stage mortgage copilot customer and back-office lifecycle.
-                All regulatory compliance checks, AI reasoning fallbacks, and enterprise integration
-                adapters execute deterministically offline without external API dependencies.
+                AI-assisted mortgage meeting workflow from preparation through post-meeting execution.
+                Follow the 6-phase journey below or launch individual milestones to evaluate real-time
+                compliance checks, human approval gates, and back-office operations sync.
               </p>
             </div>
 
@@ -221,7 +272,18 @@ export default function DemoPage() {
                   className="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center justify-center space-x-2 shadow-xs cursor-pointer"
                 >
                   <Play className="h-4 w-4 fill-current" />
-                  <span>START DEMO (Step 1)</span>
+                  <span>START DEMO</span>
+                </Button>
+              </Link>
+
+              <Link href="/meeting/meet_001/summary">
+                <Button
+                  variant="outline"
+                  size="md"
+                  className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 font-medium flex items-center justify-center space-x-1.5 cursor-pointer"
+                >
+                  <FastForward className="h-4 w-4 text-slate-400" />
+                  <span>Skip to Summary</span>
                 </Button>
               </Link>
 
@@ -233,7 +295,7 @@ export default function DemoPage() {
                 className="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 font-medium flex items-center justify-center space-x-2 cursor-pointer"
               >
                 <RotateCcw className={`h-4 w-4 ${isResetting ? "animate-spin" : ""}`} />
-                <span>{isResetting ? "Resetting..." : "Reset Demo"}</span>
+                <span>{isResetting ? "Restarting..." : "Restart Demo"}</span>
               </Button>
             </div>
           </div>
@@ -246,63 +308,106 @@ export default function DemoPage() {
           )}
         </div>
 
-        {/* Evaluation Pillars Summary Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="p-4 border-l-4 border-l-rose-500 bg-white">
-            <div className="flex items-center space-x-3">
-              <ShieldCheck className="h-5 w-5 text-rose-600 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-slate-900">Deterministic Precedence</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  TRID, TILA, and ATR rules evaluate in &lt;10ms with absolute precedence over LLM.
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-4 border-l-4 border-l-blue-500 bg-white">
-            <div className="flex items-center space-x-3">
-              <Briefcase className="h-5 w-5 text-blue-600 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-slate-900">Human Approval Gates</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Zero automated approvals or loan commits; officer must inspect and sign off.
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-4 border-l-4 border-l-emerald-500 bg-white">
-            <div className="flex items-center space-x-3">
-              <Layers className="h-5 w-5 text-emerald-600 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-slate-900">Enterprise Integrations</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  MISMO 3.4 Form 1003, Salesforce FSC, and Blend doc portals with idempotency keys.
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="p-4 border-l-4 border-l-purple-500 bg-white">
-            <div className="flex items-center space-x-3">
-              <FileText className="h-5 w-5 text-purple-600 shrink-0" />
-              <div>
-                <p className="text-xs font-bold text-slate-900">Stated vs. Verified</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">
-                  Conversational income is quarantined as STATED until tax documentation is verified.
-                </p>
-              </div>
-            </div>
-          </Card>
+        {/* 6-Phase User Journey Navigation Ribbon */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+            Six-Phase End-to-End Product Journey
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            {SIX_PHASE_JOURNEY.map((p) => (
+              <Link
+                key={p.phase}
+                href={p.route}
+                className="p-3 rounded-lg border border-slate-200 hover:border-rose-400 hover:bg-rose-50/40 transition-colors group cursor-pointer"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold text-slate-900 group-hover:text-rose-700">
+                    {p.label}
+                  </span>
+                  <ArrowRight className="h-3 w-3 text-slate-400 group-hover:text-rose-600 transition-transform group-hover:translate-x-0.5" />
+                </div>
+                <p className="text-[11px] text-slate-500 leading-tight">{p.desc}</p>
+              </Link>
+            ))}
+          </div>
         </div>
 
-        {/* 15-Stage Roadmap Step Grid */}
+        {/* Four Recommended Demo Scenarios (Highest Impact) */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900 flex items-center space-x-2">
+              <Sparkles className="h-5 w-5 text-rose-600" />
+              <span>Four Recommended Live Demo Scenarios</span>
+            </h2>
+            <span className="text-xs text-slate-500 hidden sm:inline">
+              Demonstrates compliance, AI extraction, and human governance
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {FOUR_RECOMMENDED_SCENARIOS.map((sc) => (
+              <div
+                key={sc.number}
+                className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs hover:shadow-xs transition-shadow flex flex-col justify-between space-y-3"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                      Scenario {sc.number}
+                    </span>
+                    <Badge
+                      severity={sc.severity === "CRITICAL" ? "critical" : "high"}
+                      size="sm"
+                    >
+                      {sc.severity}
+                    </Badge>
+                  </div>
+
+                  <h3 className="text-sm font-bold text-slate-900">{sc.title}</h3>
+
+                  <div className="p-2.5 bg-slate-50 rounded border border-slate-200 text-xs space-y-1.5">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-500 block">
+                        Conversational Trigger:
+                      </span>
+                      <p className="text-slate-800 italic">{sc.trigger}</p>
+                    </div>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-rose-700 block">
+                        AI Guidance:
+                      </span>
+                      <p className="text-slate-700 font-medium">{sc.guidance}</p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-600">
+                    <strong className="text-slate-900">Why It Matters:</strong> {sc.whyItMatters}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-500 font-medium">{sc.category}</span>
+                  <Link href="/meeting/meet_001/live">
+                    <Button
+                      size="sm"
+                      className="bg-slate-900 hover:bg-slate-800 text-white text-xs h-7.5 px-3 flex items-center space-x-1 cursor-pointer"
+                    >
+                      <span>{sc.launchAction}</span>
+                      <ArrowRight className="h-3 w-3" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 15-Stage Detailed Evaluation Roadmap */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center space-x-2">
-              <Sparkles className="h-5 w-5 text-rose-600" />
-              <span>15-Stage End-to-End Evaluation Flow</span>
+            <h2 className="text-base font-bold text-slate-900 flex items-center space-x-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              <span>Complete 15-Milestone Assessment Roadmap</span>
             </h2>
             <span className="text-xs text-slate-500">
               Click &quot;Launch Step&quot; to test each individual milestone

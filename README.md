@@ -1,205 +1,301 @@
-# Darwix AI — Enterprise Real-Time AI Copilot for U.S. Mortgage Sales
+# Mortgage AI Copilot
 
-Darwix AI is a real-time compliance and sales intelligence copilot engineered for U.S. Mortgage Loan Officers (MLOs), branch managers, back-office operations teams, and lending institutions. It couples deterministic regulatory rules executing in sub-10ms with contextual large language model reasoning to improve borrower conversion, ensure strict compliance with federal lending mandates, and automate Fannie Mae Form 1003 data capture and post-meeting enterprise workflows.
-
----
-
-## 1. Project Overview
-
-In residential mortgage origination, loan officers conduct high-stakes consultations where they must rapidly analyze complex borrower financial situations, compare conforming loan options, handle turnaround and rate objections, and capture dozens of structured data fields. A single verbal misstatement—such as an informal pre-approval promise or quoting an interest rate without disclosing the Annual Percentage Rate (APR)—creates severe regulatory exposure under CFPB TRID, TILA Regulation Z, and Dodd-Frank ATR/QM rules.
-
-Darwix AI solves this challenge through an advisory copilot architecture where:
-- **Deterministic Rules (Priority 1)** evaluate regulatory constraints in sub-10ms with absolute precedence.
-- **Contextual AI Inference (Priority 2)** generates sales coaching, objection responses, and structured Form 1003 fact extraction.
-- **Human-in-the-Loop Governance** guarantees that no loan approval, rate lock, financial mutation, or external customer communication occurs without explicit loan officer review and approval.
+Darwix AI is an enterprise-grade real-time compliance copilot and workflow automation platform purpose-built for U.S. residential mortgage origination. It pairs deterministic regulatory verification executing in sub-20ms with low-latency Large Language Model reasoning (Groq LLaMA 3.3 70B) to protect lenders from severe statutory violations, eliminate post-call administrative drag, and streamline Fannie Mae Form 1003 origination.
 
 ---
 
-## 2. The Problem in Mortgage Sales
+## Overview
 
-1. **High In-Call Cognitive Load**: Loan officers must actively listen, build trust, calculate front-end/back-end DTI ratios, probe for unstated liabilities, and compare loan products simultaneously.
-2. **Regulatory Risk & Inadvertent Non-Compliance**: Verbal representations made during phone calls can trigger civil penalties, mandatory borrower restitution, or lender buybacks under TRID and TILA.
-3. **Data Integrity & Stated vs. Verified Confusion**: Income mentioned verbally during a call is often prematurely treated as qualifying income, creating underwriting friction when self-employed borrowers lack two years of tax returns.
-4. **Post-Meeting Administrative Drag**: After each 30-minute call, loan officers spend 45–60 minutes manually updating Salesforce CRM, drafting Form 1003 in Encompass, building document request checklists, and sending follow-up emails.
+In the U.S. mortgage industry, Loan Officers (MLOs) operate in a high-stakes, highly regulated environment. Every borrower conversation touches strict federal consumer protection statutes (CFPB TRID, Dodd-Frank ATR/QM, TILA Regulation Z, 18 U.S.C. § 1014). An inadvertent verbal pre-approval promise or quoting an interest rate without disclosing the Annual Percentage Rate (APR) exposes lending institutions to civil money penalties, mandatory borrower restitution, or costly loan buybacks.
+
+Darwix AI functions as an invisible in-call cockpit and post-call automation copilot:
+- **During the Call**: Runs real-time multi-speaker diarization, flags compliance infractions within milliseconds, suggests compliant phrasing, and extracts structured Form 1003 financial facts.
+- **After the Call**: Synthesizes verified borrower profiles, segregates stated from verified income, and syncs data to Salesforce CRM and ICE Encompass LOS with mandatory human approval gates.
 
 ---
 
-## 3. The Solution: Darwix AI Architecture
+## Problem
+
+1. **High In-Call Cognitive Overload**: Loan officers must balance relationship building, active listening, debt-to-income (DTI) calculations, and probing for unstated liabilities while navigating multiple legacy screens.
+2. **Regulatory Exposure**: Verbal representations made during consultations can easily violate federal laws:
+   - *TRID 12 CFR § 1026.19*: Verbal promises ("You should be approved") before underwriter review and formal Loan Estimate (LE) issuance.
+   - *TILA 12 CFR § 1026.24*: Mentioning interest rates without stating the APR.
+   - *18 U.S.C. § 1014*: Encouraging borrowers to omit existing recurring debts from credit applications.
+3. **Data Pollution (Stated vs. Verified)**: Verbal borrower claims (e.g., cash gig income or unverified self-employment) are often improperly treated as qualifying income, causing severe delays or loan rejections during underwriting.
+4. **Administrative Fatigue**: Loan officers spend 30–45 minutes after each consultation manually re-keying notes into CRMs, drafting Form 1003s in the LOS, and manually compiling document request checklists.
+
+---
+
+## Product Vision
+
+To empower mortgage lenders with an **advisory-first, compliance-driven AI Copilot** that:
+- Elevates Loan Officer performance without replacing human relationship building.
+- Enforces 100% predictable, zero-hallucination regulatory guardrails via deterministic rule precedence.
+- Automates 85% of post-meeting administrative tasks through idempotent enterprise integrations.
+- Maintains strict human-in-the-loop governance: the copilot advises, prepares, and structures, but certified licensed officers authorize every external action.
+
+---
+
+## Key User Journey
+
+The product implements a seamless 6-phase mortgage lifecycle:
+
+```
+[1. Prepare]   -->   [2. Meet]   -->   [3. Copilot]   -->   [4. Summary]   -->   [5. Execute]   -->   [6. Monitor]
+ Pre-Meeting           Live Audio         Real-Time          Post-Meeting        Enterprise Sync     Manager & Ops
+ Intelligence        Transcription      Interventions       Human Review         CRM / LOS / Docs     Dashboards
+```
+
+1. **Prepare (Pre-Meeting)**: Synthesizes CRM/LOS records into an instant briefing, highlighting credit tier, initial DTI, and missing documents before the call begins.
+2. **Meet (Live Workspace)**: Dual-channel audio wave simulation and real-time streaming transcript for borrower and officer.
+3. **Copilot (In-Call Guidance)**: Dual-engine intervention cards appear with suggested talking points, compliance alerts, and Form 1003 fact extraction.
+4. **Summary (Post-Call Review)**: AI-synthesized executive wrap-up, underwriting risk matrix, and stated vs. verified financial segregation.
+5. **Execute (Enterprise Sync)**: One-click gated sync to Salesforce Financial Services Cloud, ICE Encompass, and borrower document vaults.
+6. **Monitor (Governance)**: Branch managers track team compliance scores; operations specialists resolve document blockers and data conflicts.
+
+---
+
+## AI Copilot
+
+The in-call copilot HUD provides non-intrusive, context-aware assistance:
+- **Live Fact Ledger**: Extracts loan amounts, purchase prices, loan programs, and down payments as they are spoken.
+- **Suggested Responses**: Compliant answers for complex borrower questions (e.g., down payment requirements, rate volatility).
+- **Voice Assistance**: One-click audio playback of suggested phrasing via ElevenLabs text-to-speech.
+- **Explainability**: Every suggestion displays confidence ratings, source transcript citations, and underlying regulatory authority.
+
+---
+
+## Intervention Engine
+
+The copilot utilizes a **15-stage dual-engine intervention pipeline**:
 
 ```mermaid
-flowchart TB
-    subgraph ClientLayer ["Client Experience (Next.js 16 App Router)"]
-        UI_Dash["Loan Officer Pipeline (/dashboard)"]
-        UI_Brief["Pre-Meeting Briefing (/meeting/[id])"]
-        UI_Live["Live Copilot Workspace (/meeting/[id]/live)"]
-        UI_Summ["Post-Meeting Action Center (/meeting/[id]/summary)"]
-        UI_Demo["Evaluator Demo Guide (/demo)"]
-        UI_Ops["Back-Office Operations Hub (/operations)"]
-        UI_Mgr["Manager Governance Portal (/manager)"]
-        UI_Cust["Customer Portal (/customer/[id])"]
-    end
+flowchart TD
+    A[Transcript Ingestion] --> B[Text Normalization]
+    B --> C{1. Deterministic Rules Engine}
+    C -- Match --> D[Deterministic Precedence Override]
+    C -- No Match --> E[2. Groq LLM Contextual Reasoning]
+    E --> F[Low-Confidence Suppression <75%]
+    F --> G[Severity Clamping]
+    D --> H[Action Deck Coordinator]
+    G --> H
+    H --> I[Anti-Fatigue Cooldown 15s]
+    H --> J[Deduplication & Anti-Spam Memory]
+    I --> K[Display Active Card max 3]
+    J --> K
+    K --> L[Officer Action: Accept / Dismiss / Escalate]
+    L --> M[Immutable Audit Log Event]
+```
 
-    subgraph ProcessingCore ["Darwix Processing Core"]
-        direction TB
-        subgraph DeterministicEngine ["1. Deterministic Compliance Engine (Priority 1)"]
-            TRID["TRID Informal Approval Guard (12 CFR § 1026.19)"]
-            TILA["TILA Reg Z APR Disclosure Check (12 CFR § 1026.24)"]
-            FRAUD["Liabilities Omission Guard (18 U.S.C. § 1014)"]
-            ATR["Dodd-Frank ATR/QM Income Verification (12 CFR § 1026.43)"]
-            UDAAP["Deceptive Competitor Pricing Guard (FTC Act Sec 5)"]
-            ECOA["Equal Credit Opportunity Act Guard (12 CFR § 1002.5)"]
-        end
+### Deterministic Priority 1 Rules
+- Runs synchronously in `<20ms` using strict regex and keyword patterns.
+- Evaluates statutory boundaries: TRID, TILA, ATR/QM, Liability Omission, and UDAAP.
+- **Absolute Precedence**: Overrides any contradictory LLM recommendation.
 
-        subgraph AIEngine ["2. Contextual AI Engine (Priority 2)"]
-            GroqSDK["Groq Ultra-Fast LPU Inference (Llama 3.3)"]
-            FactExtract["1003 Loan Application Fact Extractor"]
-            Objection["Objection Handling & Sales Nudges"]
-            HeuristicFallback["Deterministic Heuristic Fallback"]
-        end
+### Contextual Priority 2 LLM (Groq LLaMA 3.3 70B)
+- Evaluates consultative nuance, objection handling, and complex multi-turn context.
+- Fallback to pre-compiled heuristic templates if API latency exceeds 1,500ms or fails.
 
-        subgraph Coordinator ["3. Intervention Coordinator & Guardrails"]
-            Override["Deterministic Priority Override"]
-            FatigueControl["Nudge Fatigue Cooldown & Density Limiter"]
-            DeckManager["Action Deck Manager (Max 4 Visible)"]
-        end
-    end
+### Nudge Fatigue Controls
+- **Rate Limiting**: Enforces a 15-second cooldown between non-critical suggestions.
+- **Deck Clamping**: Caps visible floating cards to a maximum of 3.
+- **Anti-Spam Memory**: Suppresses previously dismissed advisory categories for the remainder of the session.
 
-    subgraph EnterpriseHub ["Enterprise Integration Layer (Adapter Pattern)"]
-        LOS["Simulated LOS (ICE Encompass / MISMO 3.4)"]
-        CRM["Mock CRM (Salesforce Financial Services Cloud)"]
-        DOCS["Document Vault & Verification (Blend / Roostify)"]
-        COMM["Communication Gateway (SendGrid / SMS)"]
-    end
+---
 
-    UI_Live --> ProcessingCore
-    DeterministicEngine --> Coordinator
-    AIEngine --> Coordinator
-    Coordinator --> UI_Live
-    UI_Summ --> EnterpriseHub
+## Enterprise Workflow
+
+Darwix AI bridges front-line calls with back-office core systems:
+
+- **Salesforce Financial Services Cloud (CRM)**:
+  - Updates Lead status to `Pre-Qualified`.
+  - Automatically logs timestamped consultation notes (`CRM-ACT-20891`).
+  - Schedules prioritized follow-up tasks for the loan officer.
+- **ICE Encompass (LOS)**:
+  - Generates valid MISMO 3.4 Form 1003 loan application drafts (`ENC-1003-99412`).
+  - Sets file stage to `Documentation Pending`.
+  - Enforces underwriting boundaries: blocks automated credit approval decisions.
+- **Document Vault (Blend / Roostify)**:
+  - Generates custom borrower upload checklists (`DOC-REQ-88201`).
+  - Flags missing W-2s, 1040s, Schedule C, and bank statements.
+- **Mandatory Human-in-the-Loop Gate**:
+  - No external sync occurs automatically.
+  - The Loan Officer must explicitly review, adjust if necessary, and sign off.
+
+---
+
+## User Roles
+
+| Role | Primary Route | Description & Permissions |
+| :--- | :--- | :--- |
+| **Loan Officer** | `/dashboard`, `/meetings/[id]/live`, `/meetings/[id]/summary` | Conducts consultations, views live copilot HUD, reviews post-meeting summaries, and approves CRM/LOS syncs. |
+| **Branch Manager** | `/manager` | Monitors branch-wide compliance score (94.2%), escalation queues, team coaching needs, and loan officer adoption metrics. |
+| **Operations Specialist** | `/operations` | Triages incoming loan files, reviews stated vs. verified discrepancies, and tracks document SLA fulfillment. |
+| **Borrower (Customer)** | `/customer/[id]` | Transparent borrower portal showing loan progress milestones, required document checklists, and contact info (internal risk flags strictly excluded). |
+| **Evaluator / Auditor** | `/demo` | Guided demo hub with 6-phase journey ribbon, scenario triggers, and one-click demo reset. |
+
+---
+
+## Integrations
+
+All enterprise integration adapters follow strict TypeScript interfaces (`lib/integrations/types.ts`):
+
+- **CRM Adapter** (`lib/integrations/crm/`): Salesforce Financial Services Cloud.
+- **LOS Adapter** (`lib/integrations/los/`): ICE Encompass (MISMO 3.4 XML/JSON).
+- **Document Adapter** (`lib/integrations/documents/`): Blend / Roostify digital mortgage vault.
+- **Communication Adapter** (`lib/integrations/communications/`): SendGrid / SMS borrower notification service.
+
+*All adapters enforce idempotent executions using deterministic payload hashes to prevent duplicate file creation upon network retries.*
+
+---
+
+## Compliance & Safety
+
+The copilot embeds federal mortgage compliance directly into the software architecture:
+
+1. **TRID Informal Pre-Approval (12 CFR § 1026.19)**: Prevents premature verbal loan commitments.
+2. **TILA APR Oral Disclosures (12 CFR § 1026.24)**: Prohibits quoting interest rates without disclosing corresponding APR and terms.
+3. **Mortgage Fraud / Liability Omission (18 U.S.C. § 1014)**: Flags suggestions to omit debts as `CRITICAL` compliance infractions.
+4. **Dodd-Frank Ability-to-Repay (ATR / 12 CFR § 1026.43)**: Segregates undocumented cash income from qualifying income calculations.
+5. **FTC Act Section 5 / UDAAP**: Intercepts unsubstantiated competitor rate-match guarantees.
+6. **Equal Credit Opportunity Act (ECOA / 12 CFR § 1002.5)**: Prohibits inappropriate inquiries regarding family planning or marital status outside Form 1003 parameters.
+7. **Ephemeral Voice Processing (GLBA)**: Zero persistent storage of raw call audio. Audio is processed in memory and discarded; only encrypted transcripts and audit logs persist.
+
+---
+
+## Voice Assistance
+
+- **Powered by ElevenLabs**: Provides realistic, low-latency text-to-speech audio coaching.
+- **Server-Side Security**: Audio requests route securely through `/api/voice/speak`. API keys are strictly hidden from client bundles.
+- **Selective Playback**: Restricted to consultative objection handling and suggested talking points. Critical compliance warnings remain visual to avoid interrupting speech.
+- **Graceful Degradation**: If the voice service is unconfigured or unavailable, the UI seamlessly defaults to text-only mode with zero errors.
+
+---
+
+## Demo
+
+Experience the full end-to-end product demonstration at `/demo`:
+
+### 4 Recommended Demonstration Scenarios
+1. **Unverifiable Cash Income**: Borrower mentions $8,000 cash consulting income. Copilot enforces ATR rule and isolates stated from verified income.
+2. **Conflicting Borrower Debt**: Co-borrowers disagree on auto loan payment ($500 vs $1,200). Copilot flags conflict and requests official statement.
+3. **Informal Approval Prevention**: Officer casually states "You should be approved." Copilot fires immediate TRID compliance warning.
+4. **Liability Omission Prevention**: Officer suggests omitting car loan. Copilot blocks action as a CRITICAL 18 U.S.C. § 1014 violation.
+
+### Demo Controls
+- **Restart Demo**: Clears all local storage, approvals, and sync states via `POST /api/demo/reset`.
+- **Skip to Summary**: Jumps directly to post-meeting review with pre-populated transcript data.
+
+---
+
+## Architecture
+
+```
+                                +-------------------------------------------+
+                                |          Next.js 16 App Router            |
+                                |  (/demo, /meetings, /manager, /operations) |
+                                +---------------------+---------------------+
+                                                      |
+                                                      v
+                                +-------------------------------------------+
+                                |        Meeting Coordination Layer         |
+                                |  (Simulated Stream, Fact Ledger, Audio)   |
+                                +---------------------+---------------------+
+                                                      |
+                         +----------------------------+----------------------------+
+                         |                                                         |
+                         v                                                         v
+          +------------------------------+                          +------------------------------+
+          |  Deterministic Rule Engine   |                          |   Contextual AI LLM Engine   |
+          |  - TRID / TILA / 18 USC 1014 |                          |   - Groq LLaMA 3.3 70B       |
+          |  - Latency: <20ms            |                          |   - Nuance & Objections      |
+          |  - Absolute Priority         |                          |   - Fallback on Timeout      |
+          +--------------+---------------+                          +--------------+---------------+
+                         |                                                         |
+                         +----------------------------+----------------------------+
+                                                      |
+                                                      v
+                                +-------------------------------------------+
+                                |      Intervention Coordinator / Guard     |
+                                |  (Anti-Fatigue Cooldown, Severity Rank)   |
+                                +---------------------+---------------------+
+                                                      |
+                         +----------------------------+----------------------------+
+                         |                                                         |
+                         v                                                         v
+          +------------------------------+                          +------------------------------+
+          |  Human-in-the-Loop Review    |                          |  Tamper-Evident Audit Log    |
+          |  - Approve / Edit / Reject   |                          |  - SHA-256 State Hash        |
+          +--------------+---------------+                          +------------------------------+
+                         |
+                         v
+          +---------------------------------------------------------+
+          |         Enterprise Integration Layer (Adapters)         |
+          |    Salesforce CRM  |  ICE Encompass LOS  |  Blend Docs  |
+          +---------------------------------------------------------+
 ```
 
 ---
 
-## 4. Product Journey & User Personas
+## Tech Stack
 
-| User Persona | Primary Route | Core Capabilities |
-|---|---|---|
-| **Loan Officer (Agent)** | `/dashboard`<br>`/meeting/[id]/live`<br>`/meeting/[id]/summary` | Pre-call preparation, live conversation stream with Copilot guidance, suggested responses, Form 1003 fact ledger, and post-meeting Action Center. |
-| **Branch Manager** | `/manager` | Branch-wide compliance risk index, active escalation resolution queue, loan officer adoption metrics, and customer conversion funnel. |
-| **Operations Specialist** | `/operations` | Back-office document triage, stated-vs-verified income reconciliation, conflicting liabilities resolution ($500 vs $1,200), and integration exception logs. |
-| **Borrower (Customer)** | `/customer/[id]` | Transparent 6-stage milestone tracker, document upload portal, and direct loan officer contact. Excludes internal risk metadata or underwriter notes. |
-| **Evaluator / Auditor** | `/demo` | 15-stage guided roadmap covering the entire mortgage consultation lifecycle with 1-click clean state reset. |
-
----
-
-## 5. Dual-Engine AI Intervention Engine
-
-### 15-Stage Intervention Pipeline
-1. **Audio / Transcript Ingestion**: Multi-speaker diarized transcript stream with timestamps.
-2. **Text Normalization**: Strips conversational filler, normalizes smart quotes, and verifies speaker roles.
-3. **Deterministic Compliance Rules**: Hard-coded regex and multi-turn state checks evaluate in sub-10ms.
-4. **Contextual AI Inference**: Groq LPU evaluates conversational nuance with a 4-second timeout.
-5. **Deterministic Precedence Override**: If a deterministic rule matches, it completely overrides any LLM output for that category.
-6. **Low-Confidence AI Moderation**: Inferences <0.50 are suppressed; inferences 0.50–0.69 are clamped to 'low' severity and prepended with *"Possible issue detected — verify before acting."*
-7. **Severity Clamping**: Generative AI output is restricted to at most `HIGH`; only deterministic compliance rules can issue `CRITICAL` infractions.
-8. **Intervention Construction**: Creates fully typed `AIIntervention` objects with evidence quotes and citations.
-9. **Deduplication & Anti-Spam Memory**: Suppresses previously dismissed non-critical categories for the remainder of the session.
-10. **Cooldown Throttling**: Applies a minimum 3,000ms cooldown to non-critical suggestions.
-11. **Severity Priority Ranking**: Sorts queue: `CRITICAL > HIGH > MEDIUM > LOW > INFO`.
-12. **Density Limiter**: Visible active pending deck is clamped to at most 4 cards.
-13. **Action Presentation**: Renders card with collapsible evidence drawer (quote, source, regulation, risk).
-14. **Officer Action Execution**: Officer chooses `Accept`, `Dismiss`, `Escalate`, `Ask Question`, or `Mark for Verification`.
-15. **Audit Logging & State Update**: Emits immutable audit event and synchronizes customer/meeting financial profile.
+- **Framework**: Next.js 16 (App Router, Turbopack, React 19)
+- **Language**: TypeScript 5 (Strict mode)
+- **Styling**: Tailwind CSS v4 (Full dark/light mode support)
+- **AI / LLM**: Groq Cloud SDK (`llama-3.3-70b-versatile`)
+- **Voice / Audio**: ElevenLabs Text-to-Speech API
+- **Testing**: Vitest with `@testing-library/react` and jsdom
+- **Icons**: Lucide React
 
 ---
 
-## 6. Enterprise Integrations: Mocked vs. Future
+## Local Setup
 
-| Integration | Adapter | Current Status | Description & Operational Boundary |
-|---|---|---|---|
-| **Salesforce Financial Services Cloud** | `lib/integrations/crm/` | **MOCKED** | Simulates Lead creation, stage progression to 'Meeting Completed', activity logging (`CRM-ACT-20891`), and follow-up tasks (`CRM-TASK-30912`). |
-| **ICE Encompass LOS** | `lib/integrations/los/` | **MOCKED** | Formats valid MISMO 3.4 XML/JSON Form 1003 drafts (`ENC-1003-99412`). Clamps stage progression to 'Documentation Pending'; blocks automated underwriting approval. |
-| **Document Vault (Blend / Roostify)** | `lib/integrations/documents/` | **MOCKED** | Generates profile-aware verification checklists (`DOC-REQ-88201`); updates item statuses across Customer Portal and Operations Hub. |
-| **Communication Gateway (SendGrid / SMS)** | `lib/integrations/communications/` | **MOCKED** | Generates customer notification drafts (`COMM-MSG-90214`); rejects dispatch without valid `approvedByOfficerId`. |
-| **Tri-Merge Credit Bureau** | `lib/integrations/types.ts` | **FUTURE** | Specification complete; interface defined for Equifax, Experian, and TransUnion pulls post-pilot. |
-| **Automated Underwriting (Fannie Mae DU)** | `lib/integrations/types.ts` | **FUTURE** | Specification complete; manual underwriter review remains mandatory. |
+### Prerequisites
+- Node.js 18.17+ or 20+
+- npm 9+
 
----
+### Installation
+```bash
+# Clone the repository
+git clone https://github.com/Roushan0012/mortgage-ai-copilot.git
+cd mortgage-ai-copilot
 
-## 7. Regulatory Compliance & Deterministic Precedence
+# Install dependencies
+npm install
 
-The engine enforces strict federal lending regulations. Compliance rules run locally and never depend on third-party cloud availability:
+# Start development server
+npm run dev
+```
 
-1. **CFPB TRID Pre-Approval Standards (12 CFR § 1026.19)**: Flags informal approval statements (`"You should be approved"`). Suggested message: *"Approval has not been established from this meeting. Avoid representing the customer as approved before the required underwriting and verification process."*
-2. **TILA Regulation Z Oral Disclosures (12 CFR § 1026.24)**: Flags interest rate quotes without APR. Suggested message: *"Treat this as indicative only unless supported by an approved rate source and applicable eligibility conditions."*
-3. **Mortgage Fraud / Liability Omission (18 U.S.C. § 1014 / Fannie Mae B3-6-01)**: Flags suggestions to omit recurring debts as `CRITICAL`. Suggested message: *"Do not omit or misrepresent an existing liability. Capture the obligation accurately and follow the required verification process."*
-4. **Dodd-Frank Ability-to-Repay / ATR Rule (12 CFR § 1026.43)**: Flags undocumented cash income as `STATED` and excludes it from DTI until 2 years of tax returns are verified.
-5. **FTC Act Section 5 / CFPB UDAAP**: Flags unsubstantiated competitor beat guarantees as `HIGH` severity.
-6. **Conflicting Borrower Information**: Detects multi-speaker debt discrepancies ($500 vs $1,200) and marks them `CONFLICTED` without choosing an arbitrary winner.
-7. **Equal Credit Opportunity Act (ECOA / 12 CFR § 1002.5)**: Prohibits demographic inquiries regarding family planning or marital status outside standard Form 1003 fields.
+Open [http://localhost:3000](http://localhost:3000) (or navigate directly to [http://localhost:3000/demo](http://localhost:3000/demo)).
 
 ---
 
-## 8. Voice Assistance (ElevenLabs TTS Pipeline)
+## Environment Variables
 
-- **Purpose**: Enables the loan officer to listen to suggested responses and consultative coaching scripts via audio.
-- **Server-Side Security**: All ElevenLabs API requests route through `POST /api/voice/speak`. API keys are never exposed to browser code.
-- **Text Normalization**: Strips markdown, bracketed tags, UI labels, and confidence numbers prior to synthesis.
-- **Selective Filtering**: Audio playback is restricted to consultative guidance and objection handling; compliance alerts remain visual to avoid audio interference.
-- **Graceful Fallback**: If `ELEVENLABS_API_KEY` is not configured or character limits are exceeded, the UI displays clear text suggestions without interruption.
-
----
-
-## 9. Evaluator Demo Guide (`/demo`) & Reset
-
-A guided demonstration route is available at `/demo`.
-
-### 15-Stage Evaluation Flow
-1. **Pre-Meeting Brief** (`/meeting/meet_001`): Review borrower profile and agenda.
-2. **Start Live Meeting** (`/meeting/meet_001/live`): Launch 3-column synchronous cockpit.
-3. **Play Simulated Transcript**: Run 16-turn benchmark transcript.
-4. **Inspect AI Interventions**: Observe real-time TRID, TILA, and ATR compliance cards.
-5. **Agent Actions**: Test `Accept`, `Dismiss` (with rationale), `Escalate`, and `Ask Question`.
-6. **End Meeting**: Transition consultation session to post-meeting summary.
-7. **Generate Executive Summary** (`/meeting/meet_001/summary`): Review 19 summary facets.
-8. **Action Center Triage**: Inspect drafted enterprise actions.
-9. **Approve CRM Update**: Officer reviews modal and approves Salesforce sync (`CRM-ACT-20891`).
-10. **Approve LOS Update**: Officer approves Form 1003 draft in MISMO 3.4 (`ENC-1003-99412`).
-11. **Dispatch Document Package**: Dispatch borrower upload checklist (`DOC-REQ-88201`).
-12. **Review Follow-Ups**: Verify tasks assigned to officer and borrower.
-13. **Manager Dashboard** (`/manager`): Review compliance health and escalation resolution.
-14. **Operations Hub** (`/operations`): Triage document verification and debt conflicts.
-15. **Audit Trail**: Verify immutable audit records and idempotency keys.
-
-### Demo Reset
-Clicking **"Reset Demo"** on `/demo` or in the Live Workspace header triggers `POST /api/demo/reset`. This clears all pending approvals, sync states, intervention cards, and audit logs, returning the system to its initial seed state without touching configuration or environment variables.
-
----
-
-## 10. Environment Configuration
-
-The application is fully functional in offline/mock mode without third-party API credentials. To enable live cloud LLM reasoning or voice assistance, configure `.env`:
+The application runs fully functional out of the box in offline/mock mode. To enable live Groq AI inference and ElevenLabs voice generation, copy `.env.example` to `.env`:
 
 ```bash
-# Optional: Groq Cloud LPU (Contextual LLM Reasoning)
+# Groq Cloud API Key (for live LPU contextual reasoning)
 GROQ_API_KEY=gsk_your_groq_api_key_here
 
-# Optional: ElevenLabs TTS (Audio Voice Coaching)
+# ElevenLabs API Key (for realistic AI voice audio)
 ELEVENLABS_API_KEY=xi_your_elevenlabs_api_key_here
 ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM
 ELEVENLABS_MODEL_ID=eleven_monolingual_v1
 ```
 
-> **Security Mandate**: Never prefix secret keys with `NEXT_PUBLIC_`. The `.gitignore` file strictly excludes `.env`, `.env.local`, and all secret files.
+> **Security Rule**: API keys are server-side only. Never prefix secret variables with `NEXT_PUBLIC_`. The `.gitignore` file strictly blocks `.env` and `.env.local`.
 
 ---
 
-## 11. Verification & Automated Testing
+## Testing
 
-The repository contains 44 automated unit and integration tests across 5 test suites.
+The project includes 44 automated unit and integration tests across 5 test suites:
 
 ```bash
-# Run all test suites
+# Run test suite
 npm test
 
 # Run code linter
@@ -208,33 +304,48 @@ npm run lint
 # Run TypeScript typecheck
 npm run typecheck
 
-# Build for production
+# Production build verification
 npm run build
 ```
 
-### Test Coverage Areas
-1. **`tests/assessment-hardening.test.ts`**: Verifies all 14 required intervention categories, exact high-risk messages, and demo reset invariants.
-2. **`tests/integrations.test.ts`**: Verifies adapter registry, stated-vs-verified financial isolation, LOS defensive clamping, approval gate validation, and idempotency caching.
-3. **`tests/intervention-engine.test.ts`**: Verifies 10 core production scenarios and deterministic regex accuracy.
-4. **`tests/pipeline-guardrails.test.ts`**: Verifies anti-spam deduplication, dismissal memory, and Zod schema validation.
-5. **`tests/voice-engine.test.ts`**: Verifies ElevenLabs request sanitization, text normalization, and audio stream headers.
+### Test Suites
+- `tests/assessment-hardening.test.ts`: Validates 14 required intervention scenarios, high-risk compliance triggers, and demo reset idempotency.
+- `tests/integrations.test.ts`: Tests CRM/LOS adapters, stated vs. verified isolation, and human approval gates.
+- `tests/intervention-engine.test.ts`: Verifies deterministic rule matching, regex performance, and override mechanics.
+- `tests/pipeline-guardrails.test.ts`: Tests anti-spam deduplication, cooldown throttling, and low-confidence suppression.
+- `tests/voice-engine.test.ts`: Tests ElevenLabs request sanitization, audio stream generation, and fallback modes.
 
 ---
 
-## 12. Known Operational Boundaries & Limitations
+## Mocked vs Future Integrations
 
-1. **Simulated Enterprise Endpoints**: The Salesforce and Encompass adapters run in local mock mode. Production integration requires enterprise OAuth2 credentials and firewall configuration.
-2. **Ephemeral Call Audio**: In accordance with Gramm-Leach-Bliley Act (GLBA) and wiretap consent standards, raw call audio is processed transiently in memory and is not stored permanently.
-3. **Credit Bureau Gateway**: Tri-merge credit pull interfaces are specified in `types/` but marked `FUTURE` pending live bureau credentialing.
-4. **Automated Underwriting (DU/LPA)**: AUS decisioning is marked `FUTURE`; human underwriter review remains mandatory on all files.
+| Integration System | Current Status | Implemented Capabilities | Production / Future Scope |
+| :--- | :--- | :--- | :--- |
+| **Salesforce Financial Services Cloud** | **MOCKED** | Lead creation, stage progression, timestamped activity notes, task creation. | Live OAuth2 enterprise handshake with `@salesforce/core`. |
+| **ICE Encompass LOS** | **MOCKED** | Form 1003 draft creation in MISMO 3.4 format, stated-vs-verified isolation, defensive stage clamping. | Direct connection to ICE Mortgage Technology Developer Connect REST APIs. |
+| **Blend / Roostify Document Vault** | **MOCKED** | Profile-aware document request checklist generation, status tracking. | Bi-directional document OCR ingestion and webhook status updates. |
+| **Tri-Merge Credit Bureau** | **FUTURE** | Data models and schemas defined in `lib/types/`. | Direct API connection to Equifax, Experian, TransUnion via Fannie Mae DU gateway. |
+| **Automated Underwriting (Fannie Mae DU / Freddie Mac LPA)** | **FUTURE** | Guideline risk scoring and checklist generation. | Direct AUS submission and Findings report extraction. |
 
 ---
 
-## 13. Assessment Traceability Matrix
+## Known Limitations
 
-Complete requirements traceability is documented in [`docs/ASSESSMENT_TRACEABILITY.md`](file:///Users/roushan_iiitbgp/Desktop/Mortgage-ai-copilot/docs/ASSESSMENT_TRACEABILITY.md). Additional supporting specifications include:
-- [`docs/ADVANCED_SCENARIOS.md`](file:///Users/roushan_iiitbgp/Desktop/Mortgage-ai-copilot/docs/ADVANCED_SCENARIOS.md): Behavioral test matrix for all 8 high-risk scenarios.
-- [`docs/PILOT_PRIORITIZATION.md`](file:///Users/roushan_iiitbgp/Desktop/Mortgage-ai-copilot/docs/PILOT_PRIORITIZATION.md): 2-week-before-pilot tradeoff decisions.
-- [`docs/RESEARCH_AND_ASSUMPTIONS.md`](file:///Users/roushan_iiitbgp/Desktop/Mortgage-ai-copilot/docs/RESEARCH_AND_ASSUMPTIONS.md): Domain context and labeled assumptions.
-- [`docs/METRICS.md`](file:///Users/roushan_iiitbgp/Desktop/Mortgage-ai-copilot/docs/METRICS.md): North Star metric, operational metrics, and guardrail metrics.
-- [`docs/FINAL_ASSESSMENT_CHECKLIST.md`](file:///Users/roushan_iiitbgp/Desktop/Mortgage-ai-copilot/docs/FINAL_ASSESSMENT_CHECKLIST.md): 7-dimension assessment scorecard.
+1. **Simulated Enterprise Endpoints**: Salesforce and Encompass adapters run in local mock mode to ensure 100% demo reliability without requiring external sandbox licenses.
+2. **Ephemeral Audio Processing**: To guarantee compliance with GLBA and wiretapping consent laws, raw voice audio is processed in memory and discarded. Permanent voice archives are not retained.
+3. **No Automated Credit Decisioning**: The copilot provides underwriting readiness analysis; it explicitly does not render binding credit decisions or pre-approval commitments.
+4. **Third-Party Rate Limit Buffering**: When running with live API keys under free-tier quotas, rapid trigger tests may trigger fallback heuristic templates.
+
+---
+
+## Product Decisions
+
+Comprehensive architectural and product decisions are documented in [`docs/FINAL_PRODUCT_DECISIONS.md`](file:///Users/roushan_iiitbgp/Desktop/Mortgage-ai-copilot/docs/FINAL_PRODUCT_DECISIONS.md).
+
+Key Highlights:
+- **Hybrid AI Over Pure LLM**: Regulatory safety requires deterministic `<20ms` regex guarantees; LLMs cannot be trusted with uncapped regulatory liabilities.
+- **Strict Stated vs. Verified Isolation**: Verbal numbers never pollute verified underwriting data.
+- **Human Approval Gates**: Automated AI commits to LOS/CRM are strictly prohibited.
+- **Walkthrough Guide**: See [`docs/DEMO_SCRIPT.md`](file:///Users/roushan_iiitbgp/Desktop/Mortgage-ai-copilot/docs/DEMO_SCRIPT.md) for the 5–7 minute executive presentation plan.
+- **Assessment Traceability**: See [`docs/FINAL_REQUIREMENT_MATRIX.md`](file:///Users/roushan_iiitbgp/Desktop/Mortgage-ai-copilot/docs/FINAL_REQUIREMENT_MATRIX.md) for full requirement mapping.
+- **Client Presentation**: See [`docs/PRESENTATION_PLAN.md`](file:///Users/roushan_iiitbgp/Desktop/Mortgage-ai-copilot/docs/PRESENTATION_PLAN.md) for the 6-slide deck structure.
