@@ -56,7 +56,17 @@ export interface FinancialProfile {
   creditScoreFICO: number;
   creditTier: 'exceptional' | 'very_good' | 'good' | 'fair' | 'poor';
   grossMonthlyIncome: number;
+  statedMonthlyIncome?: number;
+  verifiedMonthlyIncome?: number;
+  incomeVerificationStatus?: 'verified' | 'required' | 'pending' | 'unverified';
   totalMonthlyLiabilities: number;
+  totalMonthlyDebtStatus?: 'verified' | 'unverified' | 'conflicted';
+  debtConflictDetails?: {
+    johnAmount: number;
+    sarahAmount: number;
+    status: 'conflicted' | 'resolved';
+    resolvedAmount?: number;
+  };
   frontEndDTI: number; // Housing ratio (%)
   backEndDTI: number; // Total obligations ratio (%)
   totalLiquidAssets: number;
@@ -209,7 +219,19 @@ export interface Meeting {
 // 3. AI Interventions & Compliance Engine Models
 // ============================================================================
 
-export type InterventionSeverity = 'info' | 'low' | 'medium' | 'high' | 'critical';
+export type InterventionSeverity =
+  | 'info'
+  | 'low'
+  | 'medium'
+  | 'high'
+  | 'critical'
+  | 'INFO'
+  | 'LOW'
+  | 'MEDIUM'
+  | 'HIGH'
+  | 'CRITICAL';
+
+export type ConfidenceLevel = 'HIGH' | 'MEDIUM' | 'LOW';
 
 export type InterventionCategory =
   | 'profiling'
@@ -236,13 +258,26 @@ export type InterventionCategory =
   | 'closing_without_next_action';
 
 export type InterventionType = 
+  | 'WARNING'
+  | 'SUGGESTION'
+  | 'QUESTION'
+  | 'CAPTURE'
+  | 'CONFLICT'
+  | 'COMPLIANCE'
+  | 'NEXT_ACTION'
   | 'question' 
   | 'alert' 
   | 'action_recommendation' 
   | 'compliance_violation' 
   | 'knowledge_lookup';
 
-export type InterventionSource = 'deterministic_rule' | 'ai_inference' | 'hybrid';
+export type InterventionSource = 
+  | 'RULE'
+  | 'AI'
+  | 'HYBRID'
+  | 'deterministic_rule' 
+  | 'ai_inference' 
+  | 'hybrid';
 
 export type InterventionStatus = 'pending' | 'accepted' | 'dismissed' | 'escalated' | 'executed';
 
@@ -251,28 +286,36 @@ export type AgentActionType =
   | 'dismiss' 
   | 'ask_question' 
   | 'view_evidence' 
-  | 'escalate';
+  | 'escalate'
+  | 'mark_verification'
+  | 'create_followup'
+  | 'mark_review';
 
 export interface AIIntervention {
   id: string;
-  title?: string;
+  title: string;
   category: InterventionCategory;
   severity: InterventionSeverity;
   trigger: string;
-  detectedEvidence: string;
-  evidence?: string;
+  detectedEvidence?: string;
+  evidence: string;
   exactMessage: string;
   suggestedResponse?: string;
   reason: string;
   source: InterventionSource;
   confidence: number;
+  confidenceLevel?: ConfidenceLevel;
   interventionType: InterventionType;
   availableActions: AgentActionType[];
-  escalationRequired: boolean;
-  generatedSystemAction: string | null;
+  escalationRequired?: boolean;
+  requiresEscalation: boolean;
+  generatedSystemAction?: string | null;
+  systemAction?: string | null;
+  generatedInformation?: string;
   riskIfIncorrect: string;
   status: InterventionStatus;
   timestamp: string;
+  dismissalReason?: string;
   // Contextual links
   meetingId?: string;
   transcriptSegmentId?: string;
@@ -396,6 +439,13 @@ export interface IntegrationEvent {
 export interface AuditEvent {
   id: string;
   eventType: 
+    | 'INTERVENTION_SHOWN'
+    | 'INTERVENTION_ACCEPTED'
+    | 'INTERVENTION_DISMISSED'
+    | 'INTERVENTION_ESCALATED'
+    | 'QUESTION_SUGGESTED'
+    | 'FIELD_MARKED_FOR_VERIFICATION'
+    | 'FOLLOWUP_CREATED'
     | 'meeting_started' 
     | 'compliance_rule_triggered' 
     | 'ai_intervention_generated' 

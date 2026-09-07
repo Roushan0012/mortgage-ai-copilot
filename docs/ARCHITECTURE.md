@@ -133,62 +133,70 @@ The backend leverages Next.js Server Components and Route Handlers under `/app/a
 ```
 
 ### Deterministic Priority Guarantee:
-Every transcript chunk is evaluated **first** (or concurrently) by pure TypeScript regex/state-machine deterministic rules in `lib/compliance/engine.ts`. If a deterministic rule triggers a high or critical compliance hazard:
-1. It is assigned an immutable `source: 'deterministic_rule'` flag.
-2. It bypasses LLM latency and is surfaced immediately to the Loan Officer.
-3. If an LLM response contradicts a deterministic rule (e.g., LLM suggests "Tell the borrower their rate is locked at 5.75%"), the Arbiter **suppresses** the generative output and logs the anomaly.
+Every transcript chunk is evaluated **first** by pure TypeScript regex/state-machine deterministic rules in `lib/compliance/engine.ts`. If a deterministic rule triggers a compliance hazard:
+1. It is assigned an immutable `source: 'RULE'` or `'HYBRID'` flag.
+2. It bypasses LLM latency (<10ms) and is surfaced immediately to the Loan Officer.
+3. If an LLM response contradicts a deterministic rule, the Intervention Coordinator **suppresses** the generative output and enforces the rule.
+4. Generative AI output is strictly clamped to at most `HIGH` severity. Only verified deterministic rules can produce `CRITICAL` compliance interventions.
 
 ---
 
-## 5. AI Architecture & Boundaries
+## 5. AI Architecture & 15-Stage Intervention Pipeline
+
+The Darwix AI copilot executes an end-to-end 15-stage modular processing pipeline:
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    actor Borrower as Borrower (John / Sarah)
-    actor LO as Loan Officer (Alex Vance)
-    participant Engine as Meeting Dispatcher
-    participant Rules as Deterministic Compliance Engine
-    participant LLM as Groq LLM (Llama 3.3)
-    participant Arbiter as Intervention Arbiter
-    participant UI as Copilot UI
-    participant Audit as Audit Ledger
-
-    Borrower->>LO: "Can we skip Sarah's auto lease so our debt ratio looks better?"
-    LO->>Engine: Streamed Transcript Segment
-    par Parallel Analysis
-        Engine->>Rules: Evaluate Deterministic Rule Set
-        Rules-->>Arbiter: Trigger Rule-COMP-003 (Liability Exclusion - CRITICAL)
-    and
-        Engine->>LLM: Contextual Inference (Prompt + Conversation Context)
-        LLM-->>Arbiter: Extracted Fact (Debt: Auto Lease $420/mo) + Rebuttal Suggestion
-    end
-    Arbiter->>Arbiter: Priority Arbitration (Deterministic Rule overrides AI)
-    Arbiter->>UI: Emit Compliance Warning Card (Must include all obligations per Fannie Mae guidelines)
-    Arbiter->>Audit: Record Trigger & Evidence Span
-    LO->>UI: Click "Ask Question" (Explain Fannie Mae full disclosure mandate)
-    UI->>Audit: Record Loan Officer Action (Accepted, Timestamped)
+flowchart TD
+    A[1. Audio / Transcript Segment] --> B[2. Normalize Text & Verify Speaker]
+    B --> C[3. Evaluate Deterministic Rules]
+    B --> D[4. Contextual AI Inference]
+    C --> E[5. Merge Detections & Override LLM]
+    D --> E
+    E --> F[6. Confidence Assessment]
+    F --> G[7. Severity Determination]
+    G --> H[8. Construct AIIntervention Object]
+    H --> I[9. Deduplicate & Anti-Spam Memory]
+    I --> J[10. Rank by Severity Priority]
+    J --> K[11. Limit Visible Action Deck]
+    K --> L[12. Present to Loan Officer]
+    L --> M[13. Officer Action Execution]
+    M --> N[14. Immutable Audit Event Logging]
+    N --> O[15. Synchronize Meeting & Customer State]
 ```
 
-### Strict Non-Negotiable Boundaries:
-- **No Autonomous Execution**: The AI cannot lock loans, approve applications, alter liability records in the LOS, or transmit disclosures without human-in-the-loop sign-off.
-- **Strict Structured Outputs**: All LLM queries enforce JSON output validated against Zod schemas. Hallucinated keys or malformed structures are rejected at the parsing boundary.
-- **Fail-Safe Fallbacks**: If the Groq API key is absent or the endpoint times out, the system operates uninterrupted using local deterministic rule engines and pre-compiled mortgage playbooks.
+### Confidence Model & Filtering:
+- **Numerical Score**: Evaluated on a `0.00` to `1.00` continuous scale.
+- **Categorical Bands**:
+  - `HIGH`: Score $\ge 0.85$ (High confidence, primary action cards).
+  - `MEDIUM`: $0.60 \le$ Score $< 0.85$ (Medium confidence, secondary advisory nudges).
+  - `LOW`: Score $< 0.60$ (Suppressed from Copilot Action Deck to eliminate noise).
+- **Rule Exemption**: Deterministic compliance rules operate with absolute authority and are **never** filtered by confidence score.
+
+### Graceful Fallback & Availability:
+- Server-side Groq LPU calls enforce a strict **4-second timeout**.
+- If the endpoint times out, returns malformed JSON, or `GROQ_API_KEY` is not present, the system instantly switches to `runContextualHeuristicInference`.
+- The live workspace presents a clear, transparent status banner:
+  > **Notice:** *AI reasoning temporarily unavailable. Rule-based assistance remains active.*
+- Zero interruption to the loan officer; all 8 deterministic guardrails remain fully active.
 
 ---
 
 ## 6. Regulatory & Compliance Architecture
 
-The system encodes key U.S. mortgage statutes into deterministic verification rules:
+The system encodes key U.S. mortgage statutes and secondary marketing guidelines into 8 deterministic rules and 2 contextual advisory engines:
 
-| Rule ID | Regulatory Authority | Hazard Condition | System Response & Required Action |
-| :--- | :--- | :--- | :--- |
-| **COMP-001** | **TRID / RESPA** (12 CFR § 1026.19) | Verbal statement committing approval (e.g., *"You're definitely approved"*) prior to Underwriter sign-off. | **CRITICAL WARNING**: Prohibit informal approval; prompt LO to state conditional pre-qualification status only. |
-| **COMP-002** | **TILA Reg Z** (12 CFR § 1026.24) | Stating a specific interest rate without stating the Annual Percentage Rate (APR) and payment terms. | **HIGH WARNING**: Require immediate APR disclosure and note that rate is floating until formal lock agreement. |
-| **COMP-003** | **Fannie Mae Selling Guide / Fraud** | Borrower or LO suggesting omitting debts, loans, or hidden obligations from Form 1003. | **CRITICAL WARNING**: Mandatory notification that all debts must be reported; fraud risk citation under 18 U.S.C. § 1014. |
-| **COMP-004** | **Dodd-Frank ATR / QM** | Discussion of factoring undocumented cash, side jobs, or future bonuses without 2-year history. | **HIGH WARNING**: Clarify W-2 / tax return documentation requirements for qualifying income. |
-| **COMP-005** | **FTC / CFPB UDAAP** | Blind guarantee to "beat any competitor by 0.5%" without written competitor Loan Estimate in hand. | **MEDIUM WARNING**: Prohibit deceptive commitments; prompt request for competing Loan Estimate document. |
-| **COMP-006** | **ECOA / Fair Lending (Reg B)** | Inconsistent treatment between primary borrower and co-borrower financial obligations. | **HIGH ALERT**: Enforce joint asset and credit evaluation parity. |
+| Rule ID | Regulatory Authority | Hazard Condition | Severity | System Action & Required Intervention |
+| :--- | :--- | :--- | :--- | :--- |
+| **COMP-TRID-001** | **TRID / RESPA** (12 CFR § 1026.19) | Stating or implying loan approval prior to underwriting sign-off. | `HIGH` | Disclaim preliminary nature; state that formal approval requires underwriting review. |
+| **COMP-TILA-002** | **TILA Reg Z** (12 CFR § 1026.24) | Quoting interest rate without Annual Percentage Rate (APR) and terms. | `MEDIUM` | Disclose APR and emphasize that rates fluctuate until locked. |
+| **COMP-FRAUD-003** | **Fannie Mae B3-6-01 / 18 U.S.C. § 1014** | Suggesting exclusion or omission of an existing debt liability. | `CRITICAL` | Immediate lock notice; mandatory supervisor escalation; require 1003 disclosure. |
+| **COMP-ATR-004** | **CFPB ATR / QM** (12 CFR § 1026.43) | Mentioning undocumented cash or unverifiable side contracts. | `HIGH` | Separate Stated vs Verified income; generate 2-year Schedule C document task. |
+| **COMP-UDAAP-005** | **FTC Act § 5 / CFPB UDAAP** | Unsupported promise to beat any competitor rate without written quote. | `HIGH` | Request competing Loan Estimate; compare terms factually without guarantees. |
+| **COMP-CONF-006** | **Fannie Mae 1003 ATR** | Conflicting liabilities stated across co-borrowers ($500 vs $1,200). | `HIGH` | Flag debt as `conflicted`; prompt officer to confirm exact figure without guessing. |
+| **COMP-PROF-007** | **Standard Form 1003 Protocol** | Missing inquiry into other recurring monthly financial obligations. | `MEDIUM` | Prompt officer to confirm recurring debt before finalizing liabilities review. |
+| **COMP-CLOSE-008** | **Application Governance** | Closing consultation without confirmed next action or appointment. | `MEDIUM` | Prompt next step confirmation; generate draft follow-up checklist task. |
+| **AI-PROD-009** | **CFPB Anti-Steering** | Borrower asks to compare 30-year vs 15-year fixed loan terms. | `LOW` | Surface objective financial trade-offs (payment size vs lifetime interest savings). |
+| **AI-OBJ-010** | **Fair Sales Practice** | Borrower claims competitor can close in 14 days. | `MEDIUM` | Address turnaround realistically; explain underwriting milestones without disparagement. |
 
 ---
 

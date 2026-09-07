@@ -93,14 +93,44 @@ The architecture provides explicit handling for high-risk mortgage consultation 
 
 ---
 
-## Current Status: Phase 2 Implemented
+## Current Status: Phase 3 Implemented — Real-Time AI Copilot & Intervention Engine
 
-**Phase 2 — Product Shell, Design System & Core User Experience** is fully implemented and operational:
-- Complete end-to-end interactive navigation with zero 404s across all origination routes.
-- Fully realized 3-column Live Meeting Cockpit with real-time simulated transcript, 1003 fact matrix, and actionable AI intervention deck.
-- Deterministic mock data layer simulating 4 multi-stage borrower consultations and compliance audits without requiring external database or cloud credentials.
-- Human-in-the-loop governance with explicit card actions: `[Use Suggested Response]`, `[Ask Question]`, `[View Evidence]`, `[Dismiss]`, and `[Escalate]`.
-- Strict architectural segregation between loan officer intelligence and customer-facing portal.
+**Phase 3 — Real-Time AI Copilot & Intervention Engine** is fully implemented, verified, and operational:
+- **Hybrid AI Architecture**: Pure deterministic rules (<10ms) enforce hard U.S. mortgage regulations with absolute priority over Groq LPU contextual LLM inferences.
+- **15-Stage Modular Pipeline**: Ingestion -> Normalization -> Speaker Verification -> Deterministic Rules -> AI Analysis -> Merged Precedence -> Confidence Assessment -> Severity Determination -> Object Construction -> Deduplication -> Severity Ranking -> Deck Limiting -> Officer Action -> Immutable Audit Event -> State Sync.
+- **10 Core Origination Scenarios**: Comprehensive automated handling across informal approvals, interest rate disclosures, liability omissions, undocumented income, competitor promises, borrower conflicts, profiling gaps, closing follow-ups, loan product comparisons, and turnaround objections.
+- **Evidence-First Transparency**: Every intervention features an expandable evidence drawer showing the exact transcript quote, detection source (`RULE`, `AI`, or `HYBRID`), confidence score, and the unaddressed regulatory/financial risk.
+- **Anti-Spam & Nudge Fatigue Memory**: Per-meeting dismissal memory suppresses repetitive non-critical notifications while ensuring critical compliance hazards are never suppressed.
+- **Interactive Playback Engine**: Real-time multi-party simulation controls (`Start`, `Pause`, `Resume`, `Restart`, `0.5x / 1x / 1.5x` speed) and 1-click test triggers for all 10 scenarios.
+- **Graceful Fallback**: Transparent operational banner and zero-downtime transition to local deterministic/heuristic engine when `GROQ_API_KEY` is not present or times out (>4s).
+
+---
+
+## Demonstrated Scenarios (10 Core Situations)
+
+The Darwix AI Copilot natively detects, analyzes, and assists with all 10 mortgage origination scenarios:
+
+| # | Scenario | Trigger Text / Role | Source & Severity | Regulatory Authority | Copilot Action & Nudge |
+| :-: | :--- | :--- | :-: | :--- | :--- |
+| **1** | **Informal Approval Statement** | *"Based on what you've told me, I think you'll definitely be approved."* (LO) | `HYBRID`<br>`HIGH` | CFPB TRID (12 CFR § 1026.19) | Warns against informal approval; prompts verbal disclaimer that approval requires completed application and underwriting review. |
+| **2** | **Indicative Rate Without APR** | *"Regarding rates, we can probably get you a 6.1% rate for your 30-year fixed loan."* (LO) | `RULE`<br>`MEDIUM` | TILA Reg Z (12 CFR § 1026.24) | Enforces oral APR disclosure; clarifies that rates float until formal rate lock agreement. |
+| **3** | **Potential Liability Omission** | *"We could leave that car loan off for now to make your debt-to-income look cleaner."* (LO) | `HYBRID`<br>`CRITICAL` | Fannie Mae B3-6-01 / 18 U.S.C. § 1014 | **CRITICAL FRAUD STOP**: Mandates all liabilities disclosure; freezes application; triggers automatic supervisor escalation. |
+| **4** | **Undocumented Cash Income** | *"I make about $8,000 a month, but most of it isn't documented because a lot of clients pay through private cash contracts."* (Co-Borrower) | `HYBRID`<br>`HIGH` | CFPB ATR/QM (12 CFR § 1026.43) | Separates Stated ($8k) vs Verified ($0) income; flags `incomeVerificationStatus: "required"`; queues Schedule C document task. |
+| **5** | **Competitor Beat Promise** | *"Don't worry, we'll beat whatever rate the other lender gives you."* (LO) | `HYBRID`<br>`HIGH` | FTC Act § 5 / CFPB UDAAP | Flags deceptive practice risk; prompts officer to request written Loan Estimate before price matching. |
+| **6** | **Conflicting Borrower Info** | John states debt is $500; Sarah states: *"Wait John, that's not right. It's actually closer to $1,200 when you include my student loan and our credit cards!"* | `HYBRID`<br>`HIGH` | Fannie Mae Form 1003 ATR | Marks liabilities as `conflicted`; records both values without choosing a winner; prompts officer clarification. |
+| **7** | **Missed Profiling Question** | Discovery ends without inquiry into recurring non-mortgage obligations. | `RULE`<br>`MEDIUM` | Form 1003 Section 3 Standard | Prompts officer: *"Besides the car and student loan payments we've discussed, are there any other recurring monthly financial obligations?"* |
+| **8** | **Closing Without Next Action** | Meeting closes with vague statement: *"Great, I'll let you know if anything comes up."* (LO) | `RULE`<br>`MEDIUM` | Lender Sales Standard | Generates draft follow-up task: *"Send borrower secure portal link for Sarah's 2024-2025 Schedule C tax returns and schedule Thursday check-in."* |
+| **9** | **Product Comparison Guidance** | Sarah asks: *"What's the difference between these mortgage options like a 30-year versus 15-year fixed for our $675,000 purchase with $85,000 down?"* | `AI`<br>`LOW` | CFPB Anti-Steering (12 CFR § 1026.36) | Contextual guidance presenting objective payment differences (~$3,570/mo vs ~$5,080/mo) and lifetime interest savings ($240k+). |
+| **10** | **Customer Objection (Speed)** | John states: *"Another lender said their process will be faster and that they can close in 14 days."* | `AI`<br>`MEDIUM` | Fair Sales Best Practice | Objection handling script explaining direct underwriting milestones, appraisal waiver conditions, and avoiding false promises. |
+
+---
+
+## Current Limitations & Engineering Boundaries
+
+1. **Audio Ingestion & Diarization**: Multi-party conversational stream is currently fed via simulated interval-based diarization (`DEMO_SIMULATION_SCRIPT`) and interactive phrase injection rather than live WebRTC microphone audio (scheduled for production telephony integration).
+2. **Server-Side AI Runtime**: All Groq LPU calls are strictly executed server-side to guarantee that `GROQ_API_KEY` is never exposed to client bundles. When offline or unkeyed, system operates seamlessly in deterministic heuristic mode.
+3. **No External Voice Synthesis**: Real-time voice synthesis (ElevenLabs) is deferred in this phase to prevent cognitive distraction in the loan officer cockpit.
+4. **Advisory Boundaries**: The AI copilot never executes binding loan locks, underwriting sign-offs, or CRM writes without human-in-the-loop authorization.
 
 ---
 
@@ -278,13 +308,16 @@ Darwix AI is designed with decoupled adapter contracts ready for enterprise depl
 Run the verification test suite before committing:
 
 ```bash
-# 1. Typecheck TypeScript models and routes
+# 1. Run unit & integration test suite (all 10 scenarios)
+npm test
+
+# 2. Typecheck TypeScript models and routes
 npm run typecheck
 
-# 2. Lint project files
+# 3. Lint project files
 npm run lint
 
-# 3. Compile optimized production build
+# 4. Compile optimized production build
 npm run build
 ```
 

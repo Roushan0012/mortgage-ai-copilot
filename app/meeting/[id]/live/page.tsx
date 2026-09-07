@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import {
@@ -30,8 +30,10 @@ import {
   ExtractedFact,
   AgentActionType,
   SpeakerRole,
+  Customer,
 } from "@/types";
 import { generateId, formatDuration } from "@/lib/utils";
+import { DEMO_SIMULATION_SCRIPT } from "@/lib/data/mock-data";
 
 export default function LiveMeetingPage() {
   const params = useParams();
@@ -41,10 +43,17 @@ export default function LiveMeetingPage() {
   const initialMeeting = repository.getMeeting(meetingId);
   const initialCustomer = initialMeeting ? repository.getCustomer(initialMeeting.customerId) : null;
 
+  const [customer, setCustomer] = useState<Customer | null>(initialCustomer);
   const [segments, setSegments] = useState<TranscriptSegment[]>(initialMeeting?.transcriptSegments || []);
   const [interventions, setInterventions] = useState<AIIntervention[]>(initialMeeting?.activeInterventions || []);
   const [extractedFacts, setExtractedFacts] = useState<ExtractedFact[]>(initialMeeting?.extractedFacts || []);
   const [highlightedSegmentId, setHighlightedSegmentId] = useState<string | undefined>(undefined);
+
+  // Simulation playback state
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [simulationSpeed, setSimulationSpeed] = useState(1);
+  const [simulationStep, setSimulationStep] = useState(initialMeeting?.transcriptSegments?.length || 0);
+  const [isAIFallback, setIsAIFallback] = useState(true);
 
   // Meeting timer & pause state
   const [secondsElapsed, setSecondsElapsed] = useState(872); // 14m 32s
@@ -73,6 +82,149 @@ export default function LiveMeetingPage() {
     }, 1000);
     return () => clearInterval(timer);
   }, [isPaused]);
+
+  // Inject a live simulated message and run dual-engine processing
+  const handleInjectTestScenario = useCallback(
+    async (text: string, speakerRole: SpeakerRole) => {
+      const speakerNames: Record<SpeakerRole, string> = {
+        loan_officer: "Alex Vance (Loan Officer)",
+        primary_borrower: "John Miller (Borrower)",
+        co_borrower: "Sarah Miller (Co-Borrower)",
+        system: "Darwix Copilot System",
+      };
+
+      const newSegment: TranscriptSegment = {
+        id: generateId("ts"),
+        meetingId,
+        timestamp: new Date().toLocaleTimeString("en-US", { hour12: false }),
+        speakerRole,
+        speakerName: speakerNames[speakerRole],
+        text,
+        confidenceScore: 0.98,
+      };
+
+      setSegments((prevSegments) => {
+        const updatedSegments = [...prevSegments, newSegment];
+
+        // Evaluate through coordinator asynchronously
+        const priorTexts = updatedSegments.map((s) => `${s.speakerName}: ${s.text}`);
+        const customerSummary = `Borrower: John & Sarah Miller, Target Price: $585,000, Conventional Fixed`;
+
+        interventionCoordinator
+          .processSegment({
+            segment: newSegment,
+            priorSegments: updatedSegments,
+            priorTranscriptTexts: priorTexts,
+            customerSummary,
+          })
+          .then((result) => {
+            if (result.isAIFallback) {
+              setIsAIFallback(true);
+            }
+
+            if (result.interventions.length > 0) {
+              setInterventions((prev) => {
+                const existingCats = new Set(prev.map((p) => p.category));
+                const fresh = result.interventions.filter((n) => !existingCats.has(n.category));
+                return [...fresh, ...prev];
+              });
+            }
+
+            if (result.extractedFacts.length > 0) {
+              setExtractedFacts((prev) => {
+                const existingPaths = new Set(prev.map((p) => p.fieldPath));
+                const fresh = result.extractedFacts.filter((n) => !existingPaths.has(n.fieldPath));
+                return [...prev, ...fresh];
+              });
+            }
+          });
+
+        return updatedSegments;
+      });
+
+      // Update customer financial profile state if relevant (Scenario 4 & Scenario 6)
+      if (/private cash contracts|isn'?t documented/i.test(text)) {
+        setCustomer((prev) => {
+          if (!prev || !prev.coBorrower) return prev;
+          return {
+            ...prev,
+            coBorrower: {
+              ...prev.coBorrower,
+              financialProfile: {
+                ...prev.coBorrower.financialProfile,
+                statedMonthlyIncome: 8000,
+                incomeVerificationStatus: "required",
+              },
+            },
+          };
+        });
+      }
+
+      if (/actually closer to \$?1,?200|closer to \$?1,?200/i.test(text)) {
+        setCustomer((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            primaryBorrower: {
+              ...prev.primaryBorrower,
+              financialProfile: {
+                ...prev.primaryBorrower.financialProfile,
+                totalMonthlyDebtStatus: "conflicted",
+                debtConflictDetails: {
+                  johnAmount: 500,
+                  sarahAmount: 1200,
+                  status: "conflicted",
+                },
+              },
+            },
+          };
+        });
+      }
+    },
+    [meetingId]
+  );
+
+  const handleToggleSimulate = () => {
+    if (simulationStep >= DEMO_SIMULATION_SCRIPT.length) {
+      handleRestartSimulation();
+      return;
+    }
+    setIsSimulating((prev) => !prev);
+  };
+
+  const handleRestartSimulation = () => {
+    setIsSimulating(false);
+    setSegments([]);
+    setInterventions([]);
+    setExtractedFacts([]);
+    setSimulationStep(0);
+    setHighlightedSegmentId(undefined);
+    setPendingQuestion(undefined);
+    if (initialCustomer) setCustomer(JSON.parse(JSON.stringify(initialCustomer)));
+    setTimeout(() => {
+      setIsSimulating(true);
+    }, 150);
+  };
+
+  // Run simulation interval
+  useEffect(() => {
+    if (!isSimulating) return;
+    if (simulationStep >= DEMO_SIMULATION_SCRIPT.length) {
+      const finishTimer = setTimeout(() => setIsSimulating(false), 0);
+      return () => clearTimeout(finishTimer);
+    }
+
+    const intervalMs = Math.round(3200 / simulationSpeed);
+    const timer = setTimeout(async () => {
+      const turn = DEMO_SIMULATION_SCRIPT[simulationStep];
+      if (turn) {
+        await handleInjectTestScenario(turn.text, turn.speakerRole);
+        setSimulationStep((prev) => prev + 1);
+      }
+    }, intervalMs);
+
+    return () => clearTimeout(timer);
+  }, [isSimulating, simulationStep, simulationSpeed, handleInjectTestScenario]);
 
   if (!initialMeeting || !initialCustomer) {
     return (
@@ -141,47 +293,6 @@ export default function LiveMeetingPage() {
     setMobileTab("transcript");
   };
 
-  // Inject a live simulated message and run dual-engine processing
-  const handleInjectTestScenario = async (text: string, speakerRole: SpeakerRole) => {
-    const speakerNames: Record<SpeakerRole, string> = {
-      loan_officer: "Alex Vance (Loan Officer)",
-      primary_borrower: "John Miller (Borrower)",
-      co_borrower: "Sarah Miller (Co-Borrower)",
-      system: "Darwix Copilot System",
-    };
-
-    const newSegment: TranscriptSegment = {
-      id: generateId("ts"),
-      meetingId,
-      timestamp: new Date().toLocaleTimeString("en-US", { hour12: false }),
-      speakerRole,
-      speakerName: speakerNames[speakerRole],
-      text,
-      confidenceScore: 0.98,
-    };
-
-    const updatedSegments = [...segments, newSegment];
-    setSegments(updatedSegments);
-
-    // Evaluate through coordinator
-    const priorTexts = updatedSegments.map((s) => `${s.speakerName}: ${s.text}`);
-    const customerSummary = `Borrower: John & Sarah Miller, Target Price: $585,000, Conventional Fixed`;
-
-    const result = await interventionCoordinator.processSegment({
-      segment: newSegment,
-      priorTranscriptTexts: priorTexts,
-      customerSummary,
-    });
-
-    if (result.interventions.length > 0) {
-      setInterventions((prev) => [...result.interventions, ...prev]);
-    }
-
-    if (result.extractedFacts.length > 0) {
-      setExtractedFacts((prev) => [...prev, ...result.extractedFacts]);
-    }
-  };
-
   const handleResetSession = () => {
     repository.resetToSeed();
     const freshMeeting = repository.getMeeting(meetingId);
@@ -191,6 +302,9 @@ export default function LiveMeetingPage() {
       setExtractedFacts([...freshMeeting.extractedFacts]);
       setHighlightedSegmentId(undefined);
       setPendingQuestion(undefined);
+      setIsSimulating(false);
+      setSimulationStep(freshMeeting.transcriptSegments.length);
+      if (initialCustomer) setCustomer(JSON.parse(JSON.stringify(initialCustomer)));
     }
   };
 
@@ -282,6 +396,21 @@ export default function LiveMeetingPage() {
         </div>
       </div>
 
+      {/* AI Fallback Mode Status Banner */}
+      {isAIFallback && (
+        <div className="bg-amber-500/10 border-b border-amber-300 text-amber-900 px-4 py-1.5 text-xs flex items-center justify-between shrink-0 animate-in fade-in">
+          <div className="flex items-center space-x-2">
+            <ShieldAlert className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+            <span>
+              <strong>System Notice:</strong> AI reasoning temporarily unavailable. Rule-based assistance remains active.
+            </span>
+          </div>
+          <span className="text-[10px] text-amber-800 font-mono font-medium hidden sm:inline bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
+            Deterministic Guardrails: 8 Active Rules
+          </span>
+        </div>
+      )}
+
       {/* Escalation Confirmation Banner */}
       {escalationConfirmation && (
         <div className="bg-red-600 text-white px-4 py-1.5 text-xs font-semibold flex items-center justify-between shrink-0 animate-in slide-in-from-top duration-150">
@@ -344,6 +473,20 @@ export default function LiveMeetingPage() {
             onInjectTestScenario={handleInjectTestScenario}
             pendingQuestion={pendingQuestion}
             onClearPendingQuestion={() => setPendingQuestion(undefined)}
+            isSimulating={isSimulating}
+            onToggleSimulate={handleToggleSimulate}
+            onRestartSimulation={handleRestartSimulation}
+            simulationSpeed={simulationSpeed}
+            onChangeSpeed={setSimulationSpeed}
+            simulationStep={simulationStep}
+            totalSteps={DEMO_SIMULATION_SCRIPT.length}
+            currentStepTag={
+              simulationStep > 0 && simulationStep <= DEMO_SIMULATION_SCRIPT.length
+                ? DEMO_SIMULATION_SCRIPT[simulationStep - 1].scenarioTag
+                : simulationStep === 0
+                ? "Ready to start simulation"
+                : "Simulation Complete"
+            }
           />
         </div>
 
@@ -354,7 +497,7 @@ export default function LiveMeetingPage() {
           }`}
         >
           <CustomerContext
-            customer={initialCustomer}
+            customer={customer || initialCustomer}
             extractedFacts={extractedFacts}
             onVerifyFact={handleVerifyFact}
             onAskQuestion={(q) => handleSelectQuestion(q)}

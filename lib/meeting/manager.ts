@@ -1,7 +1,13 @@
 import { Meeting, TranscriptSegment, SpeakerRole, ExtractedFact, MeetingSummary } from "@/types";
 import { repository } from "@/lib/data/repository";
-import { interventionCoordinator } from "@/lib/interventions/coordinator";
+import { interventionCoordinator, ProcessSegmentResult } from "@/lib/interventions/coordinator";
 import { generateId } from "@/lib/utils";
+
+export interface AddSegmentResponse {
+  segment: TranscriptSegment;
+  meeting: Meeting | null;
+  processResult: ProcessSegmentResult;
+}
 
 export class MeetingManager {
   /**
@@ -12,14 +18,14 @@ export class MeetingManager {
   }
 
   /**
-   * Add a new transcript segment and trigger the dual-engine intervention pipeline.
+   * Add a new transcript segment and trigger the 15-stage hybrid intervention pipeline.
    */
   public async addTranscriptSegment(params: {
     meetingId: string;
     text: string;
     speakerRole: SpeakerRole;
     speakerName?: string;
-  }): Promise<{ segment: TranscriptSegment; meeting: Meeting | null }> {
+  }): Promise<AddSegmentResponse> {
     const { meetingId, text, speakerRole, speakerName } = params;
     const meeting = repository.getMeeting(meetingId);
     if (!meeting) {
@@ -40,32 +46,42 @@ export class MeetingManager {
       speakerRole,
       speakerName: speakerName || defaultNames[speakerRole],
       text,
-      confidenceScore: 0.97,
+      confidenceScore: 0.98,
     };
 
+    const priorSegments = [...meeting.transcriptSegments];
     meeting.transcriptSegments.push(newSegment);
 
-    // Run intervention coordinator
-    const priorTexts = meeting.transcriptSegments.map((s) => `${s.speakerName}: ${s.text}`);
+    // Context for AI analysis
+    const priorTexts = priorSegments.map((s) => `${s.speakerName}: ${s.text}`);
     const customer = repository.getCustomer(meeting.customerId);
     const customerSummary = customer
-      ? `Borrower: ${customer.primaryBorrower.firstName} ${customer.primaryBorrower.lastName}, Target Price: $${customer.mortgageGoal.targetPurchasePrice}, Income: $${customer.primaryBorrower.financialProfile.grossMonthlyIncome}/mo`
+      ? `Borrower: ${customer.primaryBorrower.firstName} ${customer.primaryBorrower.lastName}, Target Price: $${customer.mortgageGoal.targetPurchasePrice}, Stated Income: $${customer.primaryBorrower.financialProfile.grossMonthlyIncome}/mo`
       : "Standard Conforming Loan Consultation";
 
     const processResult = await interventionCoordinator.processSegment({
       segment: newSegment,
+      priorSegments,
       priorTranscriptTexts: priorTexts,
       customerSummary,
     });
 
-    // Append extracted facts to meeting state
+    // Append newly extracted facts to meeting state (deduplicated by fieldPath)
     if (processResult.extractedFacts.length > 0) {
-      meeting.extractedFacts.push(...processResult.extractedFacts);
+      processResult.extractedFacts.forEach((newFact) => {
+        const existingIdx = meeting.extractedFacts.findIndex((f) => f.fieldPath === newFact.fieldPath);
+        if (existingIdx >= 0) {
+          meeting.extractedFacts[existingIdx] = newFact;
+        } else {
+          meeting.extractedFacts.push(newFact);
+        }
+      });
     }
 
     return {
       segment: newSegment,
       meeting: repository.getMeeting(meetingId),
+      processResult,
     };
   }
 
@@ -87,7 +103,7 @@ export class MeetingManager {
     repository.addAuditEvent({
       eventType: "agent_action_taken",
       meetingId,
-      actor: { userId: "lo_avance_402", role: "Loan Officer" },
+      actor: { userId: "lo_avance_402", role: "Loan Officer Alex Vance" },
       details: {
         actionTaken: verified ? "VERIFY_1003_FACT" : "REJECT_1003_FACT",
         category: fact.category,
@@ -99,7 +115,7 @@ export class MeetingManager {
   }
 
   /**
-   * Get or generate post-meeting summary.
+   * Get post-meeting summary.
    */
   public getMeetingSummary(meetingId: string): MeetingSummary | null {
     return repository.getMeetingSummary(meetingId);

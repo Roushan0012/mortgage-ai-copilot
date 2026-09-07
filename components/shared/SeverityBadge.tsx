@@ -22,7 +22,8 @@ export function SeverityBadge({
   className,
   ...props
 }: SeverityBadgeProps) {
-  const config = {
+  const norm = (severity || "low").toLowerCase();
+  const configMap: Record<string, { label: string; style: string; icon: React.ReactNode }> = {
     critical: {
       label: "CRITICAL",
       style: "bg-red-50 text-red-700 border-red-300 font-bold ring-1 ring-red-200",
@@ -48,8 +49,10 @@ export function SeverityBadge({
       style: "bg-emerald-50 text-emerald-800 border-emerald-200 font-medium",
       icon: <Sparkles className="h-3 w-3 text-emerald-600 shrink-0" />,
     },
-  }[severity] || {
-    label: severity.toUpperCase(),
+  };
+
+  const config = configMap[norm] || {
+    label: String(severity).toUpperCase(),
     style: "bg-slate-100 text-slate-700 border-slate-200 font-medium",
     icon: <Info className="h-3 w-3 text-slate-500 shrink-0" />,
   };

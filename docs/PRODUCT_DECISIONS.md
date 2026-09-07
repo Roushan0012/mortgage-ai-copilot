@@ -122,10 +122,74 @@
 
 ---
 
-### ADR-012: Deferral of External AI Inference (Groq/ElevenLabs) in Phase 2 for Isolated UX Polish
-- **Context**: Introducing live LLM API calls during product shell design causes unpredictable latency, flakiness during UI testing, and potential credential leakage.
-- **Decision**: Phase 2 focuses strictly on product shell, design system primitives, and interactive navigation using deterministic mock states. Live inference calls to Groq (Llama 3.3) and ElevenLabs TTS are isolated to optional background testing and deferred to Phase 3.
+### ADR-012: Deferral of External Audio/TTS in Phase 3
+- **Context**: Real-time audio synthesis (e.g. ElevenLabs) adds unnecessary overhead and distraction in an internal loan officer sales cockpit, where visual readability and speed are paramount.
+- **Decision**: Deferred ElevenLabs integration. Kept the copilot focused on visual action cards, evidence transparency, and sub-10ms text processing.
 - **Consequences**:
-  - *Pros*: 100% predictable UX testing, instant local evaluation, zero risk of third-party API rate limiting, and zero credential exposure.
-  - *Cons*: Live generative responses are simulated via rich deterministic scenarios until Phase 3 activation.
+  - *Pros*: Zero audio interference; maximum focus on conversation listening and cognitive precision.
+  - *Cons*: Audio playback remains simulated via visualizers.
+
+---
+
+### ADR-013: Absolute Precedence of Deterministic Compliance Rules over AI
+- **Context**: Modern LLMs, while contextually adept, are probabilistic and prone to hallucination, sycophancy, or non-deterministic variance. In residential mortgage originations, a single uncorrected misstatement can cause loan rescission, civil penalties, or loss of Fannie Mae seller/servicer approval.
+- **Decision**: Deterministic compliance rules execute in <10ms and have absolute override authority over LLM inferences. If a deterministic rule triggers, it cannot be overridden, weakened, or hidden by generative AI reasoning. Furthermore, generative AI is hard-clamped to at most `HIGH` severity—only deterministic rules backed by federal statute can issue `CRITICAL` violations.
+- **Consequences**:
+  - *Pros*: Provable compliance safety; instantaneous execution; auditability during regulatory examination.
+  - *Cons*: Requires maintaining comprehensive regex pattern banks alongside LLM prompts.
+
+---
+
+### ADR-014: High Severity Classification for Informal Approval Statements
+- **Context**: Loan officers frequently tell prospective borrowers *"You're definitely approved in my book"* to reassure them. Under CFPB TRID rules (12 CFR § 1026.19), this creates severe legal exposure.
+- **Decision**: Classified informal approval statements as `HIGH` severity (`COMP-TRID-001`), requiring immediate verbal clarification that formal approval requires underwriting review of completed documentation.
+- **Consequences**:
+  - *Pros*: Protects the lender from binding promissory estoppel claims and TRID examination findings.
+  - *Cons*: Requires officers to develop the habit of qualifying optimistic statements with formal disclaimers.
+
+---
+
+### ADR-015: Critical Severity and Mandatory Escalation for Liability Omission
+- **Context**: A loan officer suggesting that a borrower "leave off a car loan to make DTI look cleaner" constitutes intentional mortgage fraud under 18 U.S.C. § 1014 and Fannie Mae Selling Guide B3-6-01.
+- **Decision**: Assigned `CRITICAL` severity to liability omission attempts (`COMP-FRAUD-003`). The engine immediately flags the application, prompts full 1003 disclosure, locks submission, and triggers an automated escalation notification to the Branch Compliance Supervisor.
+- **Consequences**:
+  - *Pros*: Shields institution from criminal liability, buyback demands, and NMLS license revocation.
+  - *Cons*: High-friction workflow (justified by severe criminal and institutional liability).
+
+---
+
+### ADR-016: Strict Segregation of Stated Income vs. Verified Income
+- **Context**: Under Dodd-Frank Ability-to-Repay (12 CFR § 1026.43), lenders must verify income using reliable third-party records. Borrowers frequently cite cash revenue, side gigs, or undocumented contracts (e.g., Sarah's $8,000/mo cash design contracts).
+- **Decision**: The system strictly isolates `statedMonthlyIncome` from `verifiedMonthlyIncome`. Unverified funds are never merged into qualifying income or used for automated DTI calculations until official 1040/Schedule C tax transcripts are uploaded and verified.
+- **Consequences**:
+  - *Pros*: Guarantees Qualified Mortgage (QM) safe harbor protection; eliminates post-closing investor repurchases.
+  - *Cons*: Borrower qualification numbers initially appear lower until tax documents are processed.
+
+---
+
+### ADR-017: Suggesting Questions Instead of Auto-Answering
+- **Context**: Generative copilots that attempt to answer borrower questions directly risk providing incorrect underwriting commitments or disrupting the officer-borrower relationship.
+- **Decision**: The copilot operates as a coach that suggests clarifying questions (`QUESTION` intervention type) rather than attempting to take over or auto-answer the conversation.
+- **Consequences**:
+  - *Pros*: Preserves the loan officer's authoritative role; leads to deeper discovery and higher-fidelity Form 1003 data collection.
+  - *Cons*: Requires officer engagement to verbally deliver the question.
+
+---
+
+### ADR-018: Surfacing Explicit Confidence Levels to the Loan Officer
+- **Context**: "Black box" AI systems that conceal their certainty level lead to two failure modes: automation complacency (blindly trusting the AI) or alert fatigue (ignoring all alerts).
+- **Decision**: Every intervention card surfaces its exact source (`RULE`, `AI`, or `HYBRID`), confidence score (e.g. `96%`), confidence tier (`HIGH`, `MEDIUM`, `LOW`), and an expandable evidence drawer showing the exact quote and unaddressed risk.
+- **Consequences**:
+  - *Pros*: Full transparency and explainability; officers know when an alert is an ironclad legal mandate vs. a contextual suggestion.
+  - *Cons*: Consumes modest UI space on the intervention card.
+
+---
+
+### ADR-019: Conflict State for Contradictory Co-Borrower Liabilities
+- **Context**: When co-borrowers provide contradictory figures (e.g., John stating $500/mo and Sarah stating $1,200/mo), AI systems often make the mistake of averaging the numbers or picking the higher amount.
+- **Decision**: The copilot sets `totalMonthlyDebtStatus: "conflicted"` and records both figures with a prompt for the officer to clarify. The system never picks a winner or guesses.
+- **Consequences**:
+  - *Pros*: Upholds Form 1003 data integrity; forces verbal confirmation before formal underwriting submission.
+  - *Cons*: Leaves DTI in an unresolved state until the officer records the verified answer.
+
 

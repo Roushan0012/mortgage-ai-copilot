@@ -9,6 +9,7 @@ import {
   DollarSign,
   PieChart,
   Check,
+  AlertTriangle,
 } from "lucide-react";
 import { Customer, ExtractedFact } from "@/types";
 import { formatCurrency } from "@/lib/utils";
@@ -36,21 +37,21 @@ export function CustomerContext({
   >([
     {
       id: "oq_1",
-      question: "Monthly car payment amount?",
+      question: "Confirm total monthly debt obligations ($500 vs $1,200)?",
       answered: false,
-      detail: "John mentioned car payment, but exact monthly obligation is missing.",
+      detail: "John stated $500 (auto loan), while Sarah stated $1,200 (including student loans).",
     },
     {
       id: "oq_2",
-      question: "Student loan monthly payment terms?",
+      question: "Documentation for Sarah's self-employment income?",
       answered: false,
-      detail: "Sarah has Mohela loan; check whether on standard 10-year or IBR plan.",
+      detail: "Sarah stated $8,000/mo cash & private contracts. 2024 & 2025 Schedule C returns required.",
     },
     {
       id: "oq_3",
-      question: "Down payment seasoning & source?",
-      answered: false,
-      detail: "Confirm whether $85,000 is 100% seasoned borrower funds or includes gift.",
+      question: "Down payment seasoning & source confirmation?",
+      answered: true,
+      detail: "Verified $85,000 seasoned in Frost Bank checking & savings.",
     },
   ]);
 
@@ -64,13 +65,14 @@ export function CustomerContext({
   const coBorrower = customer.coBorrower;
   const goal = customer.mortgageGoal;
 
-  const totalMonthlyIncome =
-    primary.financialProfile.grossMonthlyIncome +
-    (coBorrower ? coBorrower.financialProfile.grossMonthlyIncome : 0);
-
   const totalMonthlyDebts =
     primary.financialProfile.totalMonthlyLiabilities +
     (coBorrower ? coBorrower.financialProfile.totalMonthlyLiabilities : 0);
+
+  const isDebtConflicted =
+    primary.financialProfile.totalMonthlyDebtStatus === "conflicted" ||
+    (primary.financialProfile.debtConflictDetails &&
+      primary.financialProfile.debtConflictDetails.status === "conflicted");
 
   return (
     <div className="flex flex-col h-full bg-slate-50/70 overflow-hidden">
@@ -127,6 +129,20 @@ export function CustomerContext({
         {/* TAB 1: CONTEXT & STRUCTURED INFORMATION */}
         {activeTab === "overview" && (
           <div className="space-y-3.5">
+            {/* Scenario 6 Warning Banner: Conflicted Financial Information */}
+            {isDebtConflicted && (
+              <div className="p-3 bg-amber-50 border border-amber-300 rounded-lg shadow-xs space-y-1 animate-in fade-in duration-200">
+                <div className="flex items-center space-x-2 text-xs font-bold text-amber-900">
+                  <AlertTriangle className="h-4 w-4 text-amber-700 shrink-0" />
+                  <span>Conflicting Financial Information (Form 1003)</span>
+                </div>
+                <p className="text-[11px] text-amber-800 leading-snug">
+                  John reported monthly debt of <strong>$500</strong>, while Sarah reported <strong>$1,200</strong>.
+                  The system does not choose which is correct. Field status is marked as <strong>CONFLICTED</strong> pending borrower clarification.
+                </p>
+              </div>
+            )}
+
             {/* Information Completeness Matrix */}
             <div className="p-3 rounded-lg border border-slate-200 bg-white shadow-xs space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-slate-900">
@@ -150,7 +166,9 @@ export function CustomerContext({
                 </div>
                 <div className="p-2 rounded bg-slate-50 border border-slate-100 flex flex-col justify-between space-y-1">
                   <span className="text-[10px] text-slate-500 font-medium">Liabilities</span>
-                  <StatusBadge status="partial" size="sm" />
+                  <span className={isDebtConflicted ? "text-[10px] font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded" : ""}>
+                    {isDebtConflicted ? "CONFLICTED" : "PARTIAL"}
+                  </span>
                 </div>
                 <div className="p-2 rounded bg-slate-50 border border-slate-100 flex flex-col justify-between space-y-1">
                   <span className="text-[10px] text-slate-500 font-medium">Documents</span>
@@ -159,43 +177,74 @@ export function CustomerContext({
               </div>
             </div>
 
-            {/* Financial Profile Summary */}
+            {/* Financial Profile Card: Explicit Separation of Stated vs Verified Income */}
             <Card>
               <CardHeader className="py-2.5 bg-slate-50/50">
-                <CardTitle className="text-xs flex items-center space-x-1.5">
-                  <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>Financial Profile</span>
+                <CardTitle className="text-xs flex items-center justify-between">
+                  <span className="flex items-center space-x-1.5">
+                    <DollarSign className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Financial Profile & Verification</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400 font-normal">ATR / QM Aligned</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-3 text-xs space-y-2">
-                <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                  <span className="text-slate-500">Employment</span>
-                  <span className="font-medium text-slate-900 text-right">
-                    John (W-2 Apex Cloud) • Sarah (Self-Employed)
+              <CardContent className="p-3 text-xs space-y-2.5">
+                {/* John Miller Income */}
+                <div className="border-b border-slate-100 pb-2 space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-slate-800">John Miller (W-2 Apex Cloud)</span>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                      W-2 VERIFIED
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 text-[11px]">
+                    <span>Monthly Base Salary:</span>
+                    <span className="font-mono font-bold text-slate-900">$14,500/mo</span>
+                  </div>
+                </div>
+
+                {/* Sarah Miller Income (Scenario 4: Stated vs Verified) */}
+                <div className="border-b border-slate-100 pb-2 space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-slate-800">Sarah Miller (Self-Employed UX)</span>
+                    <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.2 rounded border border-amber-300">
+                      VERIFICATION REQUIRED
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 text-[11px]">
+                    <span>Stated Monthly Income:</span>
+                    <span className="font-mono font-semibold text-slate-900">$8,000 - $8,200/mo</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 text-[11px]">
+                    <span>Verified Income:</span>
+                    <span className="font-mono text-slate-500 italic">Pending 2-Year 1040/Schedule C</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600 text-[11px]">
+                    <span>Verification Status:</span>
+                    <span className="font-semibold text-amber-700">Documentation Required</span>
+                  </div>
+                </div>
+
+                {/* Combined Liabilities */}
+                <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                  <div>
+                    <span className="text-slate-600 block">Monthly Liabilities:</span>
+                    {isDebtConflicted && (
+                      <span className="text-[10px] text-amber-700 font-semibold block">
+                        Conflict: $500 (John) vs $1,200 (Sarah)
+                      </span>
+                    )}
+                  </div>
+                  <span className={`font-mono font-bold ${isDebtConflicted ? "text-amber-700" : "text-slate-900"}`}>
+                    {isDebtConflicted ? "Conflicted ($500 - $1,200)" : formatCurrency(totalMonthlyDebts) + "/mo"}
                   </span>
                 </div>
-                <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                  <span className="text-slate-500">Monthly Income</span>
-                  <span className="font-bold text-slate-900 font-mono">
-                    {formatCurrency(totalMonthlyIncome)}/mo
-                  </span>
-                </div>
-                <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                  <span className="text-slate-500">Monthly Liabilities</span>
-                  <span className="font-medium text-slate-900 font-mono">
-                    {formatCurrency(totalMonthlyDebts)}/mo
-                  </span>
-                </div>
-                <div className="flex justify-between border-b border-slate-100 pb-1.5">
-                  <span className="text-slate-500">Down Payment</span>
-                  <span className="font-medium text-slate-900 font-mono">
-                    {formatCurrency(goal.targetDownPaymentAmount)} ({goal.targetDownPaymentPercent}%)
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Credit Score Status</span>
-                  <span className="font-semibold text-emerald-700">
-                    FICO 742 / 718 (Verified Soft Pull)
+
+                {/* Down payment */}
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600">Down Payment Assets:</span>
+                  <span className="font-mono font-bold text-slate-900">
+                    {formatCurrency(goal.targetDownPaymentAmount)} (12.6%)
                   </span>
                 </div>
               </CardContent>
@@ -213,7 +262,7 @@ export function CustomerContext({
                 <div className="flex justify-between border-b border-slate-100 pb-1.5">
                   <span className="text-slate-500">Purchase Timeline</span>
                   <span className="font-semibold text-slate-900">
-                    {goal.targetClosingTimelineWeeks} Weeks (Target Purchase: 2–4 weeks)
+                    {goal.targetClosingTimelineWeeks} Weeks (Target: 2–4 weeks)
                   </span>
                 </div>
                 <div className="flex justify-between border-b border-slate-100 pb-1.5">
@@ -223,7 +272,7 @@ export function CustomerContext({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Estimated Budget</span>
+                  <span className="text-slate-500">Estimated Purchase Price</span>
                   <span className="font-bold text-slate-900 font-mono text-sm">
                     {formatCurrency(goal.targetPurchasePrice)}
                   </span>
@@ -359,7 +408,7 @@ export function CustomerContext({
                 <div className="p-2 rounded bg-slate-50 border border-slate-100">
                   <span className="text-[10px] text-slate-500 block">Down Payment</span>
                   <span className="font-bold text-slate-900 font-mono text-sm">
-                    {formatCurrency(goal.targetDownPaymentAmount)} (14.5%)
+                    {formatCurrency(goal.targetDownPaymentAmount)} (12.6%)
                   </span>
                 </div>
                 <div className="p-2 rounded bg-slate-50 border border-slate-100">
@@ -371,7 +420,7 @@ export function CustomerContext({
                 <div className="p-2 rounded bg-slate-50 border border-slate-100">
                   <span className="text-[10px] text-slate-500 block">LTV / Equity</span>
                   <span className="font-bold text-slate-900 font-mono text-sm">
-                    85.47% (Requires PMI)
+                    87.4% (Conventional Fixed + PMI)
                   </span>
                 </div>
               </div>
@@ -379,31 +428,31 @@ export function CustomerContext({
               <div className="border-t border-slate-200 pt-2.5 space-y-1.5 text-xs text-slate-600">
                 <div className="flex justify-between">
                   <span>Principal & Interest (6.25% 30Y Fixed):</span>
-                  <span className="font-mono font-semibold text-slate-900">$3,078.60</span>
+                  <span className="font-mono font-semibold text-slate-900">$3,634.12</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Travis County Property Taxes (1.85%):</span>
-                  <span className="font-mono font-semibold text-slate-900">$901.88</span>
+                  <span className="font-mono font-semibold text-slate-900">$1,040.63</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Hazard / Homeowners Insurance:</span>
-                  <span className="font-mono font-semibold text-slate-900">$135.00</span>
+                  <span className="font-mono font-semibold text-slate-900">$145.00</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Private Mortgage Insurance (PMI):</span>
-                  <span className="font-mono font-semibold text-slate-900">$125.00</span>
+                  <span className="font-mono font-semibold text-slate-900">$140.00</span>
                 </div>
                 <div className="flex justify-between border-t border-slate-200 pt-2 font-bold text-sm text-slate-900">
                   <span>Total Housing PITI:</span>
-                  <span className="text-emerald-700 font-mono">$4,240.48/mo</span>
+                  <span className="text-emerald-700 font-mono">$4,959.75/mo</span>
                 </div>
                 <div className="flex justify-between text-[11px] text-slate-500 pt-1">
                   <span>Qualifying Front-End DTI:</span>
-                  <span className="font-semibold text-emerald-700">21.8% (Benchmark &le; 28%)</span>
+                  <span className="font-semibold text-emerald-700">22.0% (Benchmark &le; 28%)</span>
                 </div>
                 <div className="flex justify-between text-[11px] text-slate-500">
                   <span>Qualifying Back-End DTI:</span>
-                  <span className="font-semibold text-emerald-700">29.2% (Benchmark &le; 43%)</span>
+                  <span className="font-semibold text-emerald-700">27.3% (Benchmark &le; 43%)</span>
                 </div>
               </div>
             </CardContent>

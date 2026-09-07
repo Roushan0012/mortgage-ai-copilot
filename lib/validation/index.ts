@@ -1,13 +1,30 @@
 import { z } from "zod";
 
-export const InterventionSeveritySchema = z.enum(["info", "low", "medium", "high", "critical"]);
+export const InterventionSeveritySchema = z.enum([
+  "info",
+  "low",
+  "medium",
+  "high",
+  "critical",
+  "INFO",
+  "LOW",
+  "MEDIUM",
+  "HIGH",
+  "CRITICAL",
+]);
+
+export const ConfidenceLevelSchema = z.enum(["HIGH", "MEDIUM", "LOW"]);
 
 export const InterventionCategorySchema = z.enum([
   "profiling",
   "missing_information",
   "product_explanation",
+  "product_guidance",
+  "objection",
   "customer_objection",
+  "compliance",
   "compliance_warning",
+  "conflict",
   "conflicting_borrower_info",
   "next_best_question",
   "next_best_action",
@@ -23,11 +40,27 @@ export const InterventionCategorySchema = z.enum([
 ]);
 
 export const InterventionTypeSchema = z.enum([
+  "WARNING",
+  "SUGGESTION",
+  "QUESTION",
+  "CAPTURE",
+  "CONFLICT",
+  "COMPLIANCE",
+  "NEXT_ACTION",
   "question",
   "alert",
   "action_recommendation",
   "compliance_violation",
   "knowledge_lookup",
+]);
+
+export const InterventionSourceSchema = z.enum([
+  "RULE",
+  "AI",
+  "HYBRID",
+  "deterministic_rule",
+  "ai_inference",
+  "hybrid",
 ]);
 
 export const AgentActionTypeSchema = z.enum([
@@ -36,25 +69,36 @@ export const AgentActionTypeSchema = z.enum([
   "ask_question",
   "view_evidence",
   "escalate",
+  "mark_verification",
+  "create_followup",
+  "mark_review",
 ]);
 
 export const AIInterventionSchema = z.object({
   id: z.string(),
+  title: z.string().default("Darwix Copilot Alert"),
   category: InterventionCategorySchema,
   severity: InterventionSeveritySchema,
   trigger: z.string(),
-  detectedEvidence: z.string(),
+  detectedEvidence: z.string().optional(),
+  evidence: z.string(),
   exactMessage: z.string(),
+  suggestedResponse: z.string().optional(),
   reason: z.string(),
-  source: z.enum(["deterministic_rule", "ai_inference", "hybrid"]),
+  source: InterventionSourceSchema,
   confidence: z.number().min(0).max(1),
+  confidenceLevel: ConfidenceLevelSchema.optional(),
   interventionType: InterventionTypeSchema,
   availableActions: z.array(AgentActionTypeSchema),
-  escalationRequired: z.boolean(),
-  generatedSystemAction: z.string().nullable(),
+  escalationRequired: z.boolean().optional(),
+  requiresEscalation: z.boolean().default(false),
+  generatedSystemAction: z.string().nullable().optional(),
+  systemAction: z.string().nullable().optional(),
+  generatedInformation: z.string().optional(),
   riskIfIncorrect: z.string(),
   status: z.enum(["pending", "accepted", "dismissed", "escalated", "executed"]),
   timestamp: z.string(),
+  dismissalReason: z.string().optional(),
   meetingId: z.string().optional(),
   transcriptSegmentId: z.string().optional(),
   ruleCitation: z.string().optional(),
@@ -66,16 +110,19 @@ export const AIInterventionSchema = z.object({
 export const LLMInferenceResponseSchema = z.object({
   interventions: z.array(
     z.object({
+      title: z.string().optional(),
       category: InterventionCategorySchema,
       severity: InterventionSeveritySchema,
       trigger: z.string(),
-      detectedEvidence: z.string(),
+      detectedEvidence: z.string().optional(),
+      evidence: z.string().optional(),
       exactMessage: z.string(),
+      suggestedResponse: z.string().optional(),
       reason: z.string(),
       confidence: z.number().min(0).max(1),
-      interventionType: InterventionTypeSchema,
-      suggestedActions: z.array(AgentActionTypeSchema),
-      riskIfIncorrect: z.string(),
+      interventionType: InterventionTypeSchema.optional(),
+      suggestedActions: z.array(AgentActionTypeSchema).optional(),
+      riskIfIncorrect: z.string().optional(),
       ruleCitation: z.string().optional(),
     })
   ),

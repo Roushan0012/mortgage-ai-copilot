@@ -19,7 +19,8 @@ export function Badge({
   const sizeClasses = size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-1 text-xs font-medium";
 
   if (severity) {
-    const severityStyles: Record<InterventionSeverity, string> = {
+    const norm = severity.toLowerCase();
+    const severityStyles: Record<string, string> = {
       critical: "bg-red-50 text-red-700 border-red-200 border",
       high: "bg-amber-50 text-amber-800 border-amber-200 border",
       medium: "bg-blue-50 text-blue-700 border-blue-200 border",
@@ -32,7 +33,7 @@ export function Badge({
         className={cn(
           "inline-flex items-center rounded-md font-medium tracking-wide uppercase text-[10px]",
           sizeClasses,
-          severityStyles[severity],
+          severityStyles[norm] || severityStyles.low,
           className
         )}
         {...props}
