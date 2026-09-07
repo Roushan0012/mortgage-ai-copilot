@@ -35,6 +35,13 @@ export function Sidebar({
 
   const mainNav = [
     {
+      name: "Demo Tour",
+      href: "/demo",
+      icon: Sparkles,
+      isActive: pathname === "/demo",
+      badge: "GUIDE",
+    },
+    {
       name: "Overview",
       href: "/dashboard",
       icon: LayoutDashboard,

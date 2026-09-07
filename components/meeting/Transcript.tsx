@@ -177,6 +177,82 @@ export function Transcript({
             <span className="font-medium text-slate-800">{currentStepTag}</span>
           </div>
         )}
+
+        {/* Demo Scenario Dropdown Control */}
+        {onInjectTestScenario && (
+          <div className="pt-1 border-t border-slate-200/80 flex items-center justify-between gap-2">
+            <div className="flex items-center space-x-1 shrink-0">
+              <Sparkles className="h-3 w-3 text-rose-600" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-700">
+                Scenario:
+              </span>
+            </div>
+            <select
+              defaultValue=""
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) {
+                  const scenarios: Record<string, { text: string; role: SpeakerRole }> = {
+                    normal_discovery: {
+                      text: "Alex Vance: 'Good morning John and Sarah! Let's review your target purchase timeline and goals.'",
+                      role: "loan_officer",
+                    },
+                    informal_approval: {
+                      text: "Alex Vance: 'Based on what you've told me, you should be approved for this mortgage.'",
+                      role: "loan_officer",
+                    },
+                    indicative_rate: {
+                      text: "Alex Vance: 'Regarding rates, we can probably get you a 6.1% rate for your 30-year fixed loan.'",
+                      role: "loan_officer",
+                    },
+                    liability_omission: {
+                      text: "Alex Vance: 'We could leave that car loan off for now to make your debt-to-income look cleaner.'",
+                      role: "loan_officer",
+                    },
+                    unverifiable_income: {
+                      text: "Sarah Miller: 'I make about $8,000 a month, but most of it isn't documented because a lot of clients pay through private cash contracts.'",
+                      role: "co_borrower",
+                    },
+                    competitor_promise: {
+                      text: "Alex Vance: 'Don't worry, we can definitely beat their offer and give you a better rate.'",
+                      role: "loan_officer",
+                    },
+                    conflicting_information: {
+                      text: "Sarah Miller: 'Wait John, that's not right. It's actually closer to $1,200 when you include my student loan and our credit cards!'",
+                      role: "co_borrower",
+                    },
+                    missed_profiling_question: {
+                      text: "Alex Vance: 'Besides the car and student loan payments we've discussed, are there any other recurring monthly financial obligations?'",
+                      role: "loan_officer",
+                    },
+                    no_clear_next_action: {
+                      text: "Alex Vance: 'Great, I'll let you know if anything comes up. Bye for now.'",
+                      role: "loan_officer",
+                    },
+                  };
+                  const match = scenarios[val];
+                  if (match) {
+                    onInjectTestScenario(match.text, match.role);
+                  }
+                  e.target.value = "";
+                }
+              }}
+              title="DEMO CONTROL ONLY: Evaluator simulation trigger"
+              className="flex-1 text-[11px] py-1 px-2 border border-slate-300 rounded bg-white text-slate-800 font-medium cursor-pointer shadow-2xs hover:border-slate-400 focus:outline-none focus:ring-1 focus:ring-rose-500"
+            >
+              <option value="">Select Scenario (Demo Control)...</option>
+              <option value="normal_discovery">Normal Discovery</option>
+              <option value="informal_approval">Informal Approval</option>
+              <option value="indicative_rate">Indicative Rate</option>
+              <option value="liability_omission">Liability Omission</option>
+              <option value="unverifiable_income">Unverifiable Income</option>
+              <option value="competitor_promise">Competitor Promise</option>
+              <option value="conflicting_information">Conflicting Information</option>
+              <option value="missed_profiling_question">Missed Profiling Question</option>
+              <option value="no_clear_next_action">No Clear Next Action</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Pending Question Prompt Banner from Copilot */}

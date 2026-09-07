@@ -308,11 +308,28 @@ flowchart TD
 
 ---
 
-## Anti-Spam & Nudge Fatigue Controls
-To ensure the loan officer remains focused on the borrower rather than overwhelmed by alerts:
-1. **Per-Category Meeting Memory**: When an officer dismisses an intervention with an audit rationale (e.g. false positive), the engine suppresses non-critical triggers for that category for the remainder of the session.
-2. **Deterministic Rules Exemption**: Critical compliance violations (e.g. Scenario 3 liability exclusion) are never suppressed by anti-spam memory.
-3. **Queue Prioritization**: Interventions are sorted by severity so critical issues always occupy top visibility in the action deck.
+## Anti-Spam, Cooldown & Nudge Fatigue Control Policy
+
+To guarantee high loan officer adoption and avoid cognitive overload during live consultations, Darwix AI implements strict nudge fatigue governance:
+
+### The Nudge Fatigue Policy Matrix
+| Severity / Tier | Routing & Surfacing Rule | Cooldown Behavior | Deck Density Behavior | Dismissal Memory |
+|---|---|---|---|---|
+| **CRITICAL** | **Always Surface Immediately**. Pinned to top of deck with high-visibility red badge. | Bypasses all cooldown checks; never throttled. | Bypasses deck capacity limits; always visible. | **Cannot be permanently dismissed**; re-triggers if re-attempted. |
+| **HIGH** | **Surface Prominently**. Placed directly below Critical items. | Bypasses non-critical cooldown. | Prioritized ahead of medium/low cards. | Suppressed if explicitly dismissed with rationale. |
+| **MEDIUM** | **Contextual Ranking**. Positioned below high-severity alerts. | Subject to minimum 3,000ms cooldown. | Displayed if active deck size < 4. | Suppressed for session once dismissed. |
+| **LOW / INFO** | **Grouped & Deferred**. Consultative tips and optional questions. | Subject to minimum 3,000ms cooldown. | Deferred/hidden if active deck is at capacity (≥ 4 cards). | Suppressed for session once dismissed. |
+| **LOW-CONFIDENCE AI (< 0.70)** | **Deprioritized / Cautionary Notice**. Score 0.50–0.69 clamped to 'low' with cautionary advisory; score < 0.50 suppressed. | Subject to cooldown. | Only surfaced if deck is empty or low load. | Suppressed for session once dismissed. |
+
+### Architectural Mechanisms
+1. **Per-Category Meeting Memory**: When an officer dismisses an intervention with an audit rationale (e.g. "False positive"), the coordinator suppresses non-critical triggers for that category for the remainder of the session.
+2. **Deterministic Rules Exemption**: Critical compliance violations (e.g. Scenario 3 liability exclusion or fraud) are never suppressed by anti-spam memory.
+3. **Queue Prioritization**: Interventions are sorted by severity (`CRITICAL > HIGH > MEDIUM > LOW > INFO`) so critical issues always occupy top visibility in the action deck.
+4. **Deck Density Limiting**: Active pending cards visible in the Copilot deck are capped at `MAX_ACTIVE_DECK = 4` to prevent visual clutter and screen scrolling during fast-paced calls.
+5. **Low-Confidence AI Moderation**:
+   - Inferences with confidence score `< 0.50` are suppressed completely to prevent hallucinated noise.
+   - Inferences with confidence score `0.50 – 0.69` are downgraded to `LOW` confidence and clamped to `low` severity, with the exact message prepended: *"Possible issue detected — verify before acting."*
+   - Deterministic compliance rules operate with absolute authority and are never downgraded by confidence scoring.
 
 ---
 
@@ -321,3 +338,4 @@ If the Groq LPU API key is unconfigured, times out (>4s), or returns malformed o
 - **Notification Banner**: Displays `"AI reasoning temporarily unavailable. Rule-based assistance remains active."`
 - **Heuristic Engine**: Instantly transitions to the offline deterministic and heuristic engine.
 - **Zero Interruption**: The live consultation and compliance checks continue without UI freezing or data loss.
+

@@ -283,6 +283,12 @@ class MortgageRepository {
     return mockLoanOfficers;
   }
 
+  private resetCallbacks: Array<() => void> = [];
+
+  public onReset(cb: () => void): void {
+    this.resetCallbacks.push(cb);
+  }
+
   public resetToSeed(): void {
     this.customers.clear();
     this.meetings.clear();
@@ -292,6 +298,13 @@ class MortgageRepository {
     this.postMeetingActions.clear();
     this.documentItems.clear();
     this.seed();
+    this.resetCallbacks.forEach((cb) => {
+      try {
+        cb();
+      } catch (err) {
+        console.warn("Reset subscriber error:", err);
+      }
+    });
   }
 }
 

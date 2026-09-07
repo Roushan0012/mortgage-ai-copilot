@@ -34,6 +34,13 @@ export class InterventionCoordinator {
   // In-memory set of dismissed category keys per meeting to prevent nudge fatigue
   private dismissedByMeeting: Map<string, Set<InterventionCategory>> = new Map();
 
+  // Cooldown tracker for non-critical interventions: meetingId -> last timestamp (ms)
+  private lastNonCriticalTimestampByMeeting: Map<string, number> = new Map();
+  // Maximum active pending interventions visible simultaneously
+  private readonly MAX_ACTIVE_DECK = 4;
+  // Minimum cooldown between non-critical suggestions (3000ms)
+  private readonly NON_CRITICAL_COOLDOWN_MS = 3000;
+
   /**
    * 1. Normalize text: trim whitespace, normalize quotes, lowercase check
    */
@@ -56,6 +63,7 @@ export class InterventionCoordinator {
   }): Promise<ProcessSegmentResult> {
     const { segment, priorSegments = [], priorTranscriptTexts, customerSummary } = params;
     const meetingId = segment.meetingId || "meet_001";
+    const now = Date.now();
 
     // Stage 1 & 2: Normalize text and verify speaker
     const normalizedText = this.normalizeText(segment.text);
@@ -65,6 +73,7 @@ export class InterventionCoordinator {
     };
 
     // Stage 3: Run Deterministic Compliance Rules (Priority 1)
+    // Deterministic rules run with absolute authority and sub-10ms latency
     const ruleInterventions = complianceEngine.evaluateSegment(
       normalizedSegment,
       priorSegments
@@ -86,29 +95,53 @@ export class InterventionCoordinator {
       (aiIntv) => !ruleCategories.has(aiIntv.category)
     );
 
-    // Filter out low-confidence AI suggestions (< 0.60) to prevent noisy nudges,
-    // but NEVER filter out deterministic compliance rules regardless of score!
-    const confidentAiInterventions = compatibleAiInterventions.filter((item) => {
-      // Deterministic rules always pass; AI suggestions require at least medium confidence
-      return item.confidence >= 0.60;
-    });
+    // Stage 7: Low-Confidence AI Handling & Moderation
+    // CRITICAL: High-risk compliance rules must NEVER rely solely on generative AI inference.
+    // - Score < 0.50: Suppressed completely to prevent hallucinated noise.
+    // - Score 0.50 - 0.69: Marked as LOW confidence, clamped to 'low' severity,
+    //   and prepended with cautious advisory: "Possible issue detected — verify before acting."
+    // - Score >= 0.70: Surfaced normally with appropriate confidence badge.
+    const processedAiInterventions = compatibleAiInterventions
+      .filter((item) => item.confidence >= 0.50)
+      .map((item) => {
+        if (item.confidence < 0.70) {
+          return {
+            ...item,
+            confidenceLevel: "LOW" as const,
+            severity: "low" as const,
+            exactMessage: item.exactMessage.startsWith("Possible issue detected")
+              ? item.exactMessage
+              : `Possible issue detected — verify before acting. ${item.exactMessage}`,
+          };
+        }
+        return item;
+      });
 
-    // Stage 7 & 8: Determine severity & create merged interventions
-    const rawMerged = [...ruleInterventions, ...confidentAiInterventions];
+    // Stage 8: Merge deterministic rules with moderated AI interventions
+    const rawMerged = [...ruleInterventions, ...processedAiInterventions];
 
-    // Stage 9: Deduplicate & Anti-Spam
+    // Stage 9: Nudge Fatigue & Anti-Spam Controls
     const currentActive = repository.getInterventions(meetingId).filter((i) => i.status === "pending");
     const dismissedCategories = this.getDismissedCategories(meetingId);
+    const lastNonCritical = this.lastNonCriticalTimestampByMeeting.get(meetingId) || 0;
+    const isCoolingDown = now - lastNonCritical < this.NON_CRITICAL_COOLDOWN_MS;
 
     const deduplicated = rawMerged.filter((newIntv) => {
+      const isCritical = newIntv.severity === "critical";
+
       // 1. Do not spawn if an identical category is currently pending in the active deck
       const isAlreadyActive = currentActive.some(
         (active) => active.category === newIntv.category
       );
       if (isAlreadyActive) return false;
 
-      // 2. Do not re-spawn non-critical interventions if previously dismissed by the loan officer
-      if (dismissedCategories.has(newIntv.category) && newIntv.severity !== "critical") {
+      // 2. Do not re-spawn interventions if previously dismissed by the loan officer (unless CRITICAL)
+      if (dismissedCategories.has(newIntv.category) && !isCritical) {
+        return false;
+      }
+
+      // 3. Cooldown check: Throttle low/medium alerts if triggered in rapid succession
+      if (!isCritical && newIntv.severity !== "high" && isCoolingDown) {
         return false;
       }
 
@@ -118,8 +151,21 @@ export class InterventionCoordinator {
     // Stage 10: Rank interventions by severity (CRITICAL > HIGH > MEDIUM > LOW > INFO)
     const ranked = ComplianceEngine.sortBySeverity(deduplicated);
 
-    // Stage 11: Persist new interventions and log audit events
-    ranked.forEach((intv) => {
+    // Stage 11: Density Limiting — Cap visible pending cards at MAX_ACTIVE_DECK (4)
+    // Always preserve CRITICAL and HIGH severity items at the top; truncate excessive low/info items
+    const visibleCapacity = Math.max(0, this.MAX_ACTIVE_DECK - currentActive.length);
+    const finalized = ranked.filter((item, idx) => {
+      if (item.severity === "critical" || item.severity === "high") return true;
+      return idx < visibleCapacity;
+    });
+
+    // Update cooldown tracker if any non-critical intervention surfaced
+    if (finalized.some((item) => item.severity !== "critical" && item.severity !== "high")) {
+      this.lastNonCriticalTimestampByMeeting.set(meetingId, now);
+    }
+
+    // Stage 12: Persist new interventions and log audit events
+    finalized.forEach((intv) => {
       repository.addIntervention(intv);
       repository.addAuditEvent({
         eventType: "INTERVENTION_SHOWN",
@@ -134,10 +180,10 @@ export class InterventionCoordinator {
     });
 
     return {
-      interventions: ranked,
+      interventions: finalized,
       extractedFacts: aiResult.extractedFacts,
       ruleTriggeredCount: ruleInterventions.length,
-      aiGeneratedCount: confidentAiInterventions.length,
+      aiGeneratedCount: processedAiInterventions.length,
       isAIFallback: aiResult.isAIFallback,
       fallbackReason: aiResult.fallbackReason,
     };

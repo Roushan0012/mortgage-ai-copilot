@@ -540,7 +540,20 @@ export class IntegrationManager {
   public resetIdempotency() {
     this.idempotencyRegistry.clear();
   }
+
+  public resetAll() {
+    this.idempotencyRegistry.clear();
+    mockCRMAdapter.setFailureSimulation(false);
+    mockLOSAdapter.setFailureSimulation(false);
+    mockDocumentSystemAdapter.setFailureSimulation(false);
+    mockCommunicationAdapter.setFailureSimulation(false);
+  }
 }
 
 export const integrationManager = new IntegrationManager();
 export const integrationsHub = integrationManager;
+
+// Register subscriber with repository for synchronized demo resets
+repository.onReset(() => {
+  integrationManager.resetAll();
+});
