@@ -8,10 +8,14 @@ import {
   LoanOfficerOverview,
   InterventionStatus,
   AgentActionType,
+  FollowUpTask,
 } from "@/types";
 import {
   mockMillerCustomer,
-  mockMeeting,
+  mockCarterCustomer,
+  mockJohnsonCustomer,
+  mockGarciaCustomer,
+  mockMeetings,
   mockMeetingSummary,
   mockInterventions,
   mockAuditEvents,
@@ -38,11 +42,21 @@ class MortgageRepository {
   }
 
   private seed() {
-    // Seed customer
-    this.customers.set(mockMillerCustomer.id, JSON.parse(JSON.stringify(mockMillerCustomer)));
+    // Seed customers
+    const allCustomers = [
+      mockMillerCustomer,
+      mockCarterCustomer,
+      mockJohnsonCustomer,
+      mockGarciaCustomer,
+    ];
+    allCustomers.forEach((c) => {
+      this.customers.set(c.id, JSON.parse(JSON.stringify(c)));
+    });
 
-    // Seed meeting
-    this.meetings.set(mockMeeting.id, JSON.parse(JSON.stringify(mockMeeting)));
+    // Seed meetings
+    mockMeetings.forEach((m) => {
+      this.meetings.set(m.id, JSON.parse(JSON.stringify(m)));
+    });
 
     // Seed summary
     this.meetingSummaries.set(mockMeetingSummary.meetingId, JSON.parse(JSON.stringify(mockMeetingSummary)));
@@ -83,6 +97,14 @@ class MortgageRepository {
 
   public getMeetingSummary(meetingId: string): MeetingSummary | null {
     return this.meetingSummaries.get(meetingId) || null;
+  }
+
+  public getAllTasks(): FollowUpTask[] {
+    const tasks: FollowUpTask[] = [];
+    this.meetingSummaries.forEach((summary) => {
+      tasks.push(...summary.followUpTasks);
+    });
+    return tasks;
   }
 
   public getInterventions(meetingId?: string): AIIntervention[] {

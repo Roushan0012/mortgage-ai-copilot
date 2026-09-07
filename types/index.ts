@@ -123,7 +123,22 @@ export interface Customer {
 // 2. Meeting & Live Transcript Models
 // ============================================================================
 
-export type MeetingStatus = 'scheduled' | 'in_progress' | 'paused' | 'completed' | 'cancelled';
+export type MeetingStatus = 
+  | 'scheduled' 
+  | 'upcoming'
+  | 'in_preparation'
+  | 'in_progress' 
+  | 'paused' 
+  | 'completed' 
+  | 'follow_up_required'
+  | 'cancelled';
+
+export type MeetingAttentionFlag = 
+  | 'missing_information' 
+  | 'follow_up_due' 
+  | 'compliance_review' 
+  | 'documentation_pending';
+
 export type SpeakerRole = 'loan_officer' | 'primary_borrower' | 'co_borrower' | 'system';
 
 export interface TranscriptSegment {
@@ -170,10 +185,15 @@ export interface Meeting {
   id: string;
   customerId: string;
   title: string;
+  borrowerNames?: string;
   scheduledStartTime: string;
+  timeSlot?: string;
   actualStartTime?: string;
   actualEndTime?: string;
   status: MeetingStatus;
+  attentionFlags?: MeetingAttentionFlag[];
+  purposeDescription?: string;
+  targetPurchaseTimeline?: string;
   assignedLoanOfficerId: string;
   assignedLoanOfficerName: string;
   meetingChannel: 'in_person' | 'video_call' | 'phone_call';
@@ -194,9 +214,13 @@ export type InterventionSeverity = 'info' | 'low' | 'medium' | 'high' | 'critica
 export type InterventionCategory =
   | 'profiling'
   | 'missing_information'
+  | 'product_guidance'
   | 'product_explanation'
+  | 'objection'
   | 'customer_objection'
+  | 'compliance'
   | 'compliance_warning'
+  | 'conflict'
   | 'conflicting_borrower_info'
   | 'next_best_question'
   | 'next_best_action'
@@ -231,11 +255,14 @@ export type AgentActionType =
 
 export interface AIIntervention {
   id: string;
+  title?: string;
   category: InterventionCategory;
   severity: InterventionSeverity;
   trigger: string;
   detectedEvidence: string;
+  evidence?: string;
   exactMessage: string;
+  suggestedResponse?: string;
   reason: string;
   source: InterventionSource;
   confidence: number;

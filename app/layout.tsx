@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/layout/Navbar";
+import { AppShell } from "@/components/layout/AppShell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Darwix AI — Mortgage Sales AI Copilot",
+  title: "Darwix AI — Enterprise Mortgage Sales AI Copilot",
   description:
-    "Real-time AI copilot and deterministic regulatory compliance for U.S. mortgage loan officers.",
+    "Real-time AI copilot, Form 1003 fact extraction, and deterministic TRID/TILA regulatory compliance for U.S. mortgage loan officers.",
 };
 
 export default function RootLayout({
@@ -29,9 +29,8 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 font-sans">
-        <Navbar />
-        <main className="flex-1 flex flex-col">{children}</main>
+      <body className="h-full bg-slate-50 text-slate-900 font-sans antialiased overflow-hidden">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

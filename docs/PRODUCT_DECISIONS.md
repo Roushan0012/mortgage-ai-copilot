@@ -71,3 +71,61 @@
   - API keys (`GROQ_API_KEY`, `ELEVENLABS_API_KEY`) are restricted to server-side code and API routes; they are strictly prohibited from client bundles (`NEXT_PUBLIC_` prefixes forbidden for secrets).
   - Client-side data displayed in mock transcripts uses realistic synthetic personas (John & Sarah Miller) with all mock SSNs, account numbers, and phone numbers following standard testing format conventions (`***-**-6789`).
   - `.gitignore` explicitly prevents `.env` and `.env*.local` from ever being checked into version control, while `.env.example` provides an audited template.
+
+---
+
+### ADR-008: Actionable Intervention Cards with Multi-Action Human Governance
+- **Context**: Passive AI suggestions are frequently ignored by loan officers or cause excessive context switching when officers must manually re-type suggestions into conversation or LOS fields.
+- **Decision**: All interventions in the live cockpit are packaged as actionable cards with explicit one-click actions:
+  - `[Use Suggested Response]`: Copies or speaks verified CFPB-safe rebuttal/script into the officer's active prompt.
+  - `[Ask Question]`: Stages clarifying discovery questions into the conversation queue.
+  - `[View Evidence]`: Expands precise transcript citation, timestamps, and regulatory rule references.
+  - `[Dismiss]`: Requires a recorded officer rationale for compliance audit logging.
+  - `[Escalate]`: Routes supervisory review requests directly to the branch compliance manager dashboard.
+- **Consequences**:
+  - *Pros*: Reduces cognitive load to sub-second decisions; creates a 100% auditable record of loan officer interaction with AI suggestions.
+  - *Cons*: Requires compact visual presentation to avoid overwhelming the live screen.
+
+---
+
+### ADR-009: Strict 5-Tier Compliance Severity Taxonomy
+- **Context**: Treating all notifications equally results in "alert fatigue", where loan officers dismiss critical TRID/TILA infractions alongside minor sales coaching tips.
+- **Decision**: Standardized on a 5-tier semantic severity model:
+  - `Critical`: Hard stop legal violations (e.g. unauthorized verbal approvals, deliberate debt omissions). Prominently highlighted in crimson with mandatory acknowledgment.
+  - `High Priority`: Significant regulatory risk requiring timely correction (e.g. rate quotes lacking APR, self-employment 2-year tax return documentation gaps).
+  - `Medium`: Policy or pricing advisories (e.g. unverified competitor matching, undisclosed gifts).
+  - `Low`: Minor operational suggestions and Form 1003 completeness prompts.
+  - `Info / Nudge`: Non-intrusive sales discovery cues, rapport builders, and transition prompts.
+- **Consequences**:
+  - *Pros*: Eliminates alert fatigue; loan officers instantly recognize when legal compliance requires immediate verbal intervention.
+  - *Cons*: Requires rigorous classification logic so non-critical items are never falsely escalated to Critical.
+
+---
+
+### ADR-010: Strict Segregation Between Borrower Experience and Internal Agent Cockpit
+- **Context**: Mortgage lending involves sensitive internal risk assessments, underwriter flags, and compliance audits that must never be exposed to consumers, while consumers need clear, transparent milestone tracking.
+- **Decision**: Physically and architecturally segregated internal loan officer screens (`/dashboard`, `/meeting/[id]/live`, `/meeting/[id]/summary`, `/manager`) from borrower-facing views (`/customer/[id]`):
+  - Borrower portal displays only consumer-friendly progress bars, document upload checklists, loan targets, and contact details.
+  - Internal AI reasoning, severity ratings, audit logs, DTI calculations, and supervisor escalations are completely omitted from customer endpoints and views.
+- **Consequences**:
+  - *Pros*: Eliminates consumer confusion and prevents accidental disclosure of internal compliance deliberations or proprietary pricing margins.
+  - *Cons*: Requires maintaining distinct UI views tailored to each persona's mental model.
+
+---
+
+### ADR-011: Zero-Dependency Deterministic In-Memory Repository for Reliable Prototyping
+- **Context**: Demonstrations and automated tests fail when dependent on external database servers, network connectivity, or third-party cloud outages.
+- **Decision**: Engineered `MortgageRepository` as a robust, singleton in-memory data store hydrated with rich synthetic mortgage personas (Miller family, Carter, Johnson, Garcia), multi-turn conversation transcripts, and pre-computed compliance scenarios.
+- **Consequences**:
+  - *Pros*: Guaranteed deterministic behavior during evaluations, zero database setup friction, and instantaneous page load times across all prototype screens.
+  - *Cons*: State resets upon server restart (can be easily wired to Prisma/Postgres in Phase 3 without changing repository interfaces).
+
+---
+
+### ADR-012: Deferral of External AI Inference (Groq/ElevenLabs) in Phase 2 for Isolated UX Polish
+- **Context**: Introducing live LLM API calls during product shell design causes unpredictable latency, flakiness during UI testing, and potential credential leakage.
+- **Decision**: Phase 2 focuses strictly on product shell, design system primitives, and interactive navigation using deterministic mock states. Live inference calls to Groq (Llama 3.3) and ElevenLabs TTS are isolated to optional background testing and deferred to Phase 3.
+- **Consequences**:
+  - *Pros*: 100% predictable UX testing, instant local evaluation, zero risk of third-party API rate limiting, and zero credential exposure.
+  - *Cons*: Live generative responses are simulated via rich deterministic scenarios until Phase 3 activation.
+

@@ -3,227 +3,236 @@
 import React from "react";
 import Link from "next/link";
 import {
-  Clock,
-  Mic,
-  TrendingUp,
+  Calendar,
+  AlertCircle,
+  ArrowRight,
   ShieldCheck,
+  Sparkles,
+  PieChart,
+  ListTodo,
 } from "lucide-react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/shared/Card";
+import { repository } from "@/lib/data/repository";
+import { MetricCard } from "@/components/shared/MetricCard";
+import { MeetingCard } from "@/components/shared/MeetingCard";
+import { TaskList } from "@/components/shared/TaskList";
 import { Button } from "@/components/shared/Button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/shared/Card";
 
 export default function DashboardPage() {
+  const meetings = repository.getAllMeetings();
+  const summary = repository.getMeetingSummary("meet_001");
+  const followUpTasks = summary?.followUpTasks || [];
+
+  // Next meeting is John & Sarah Miller (meet_001)
+  const nextMeeting = meetings.find((m) => m.id === "meet_001") || meetings[0];
+
   return (
-    <div className="flex-1 max-w-7xl mx-auto w-full p-6 space-y-6">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-        <div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Loan Officer Command Center</h1>
-          <p className="text-xs text-slate-500">Alex Vance, NMLS #1489201 • Austin Central Branch</p>
+    <div className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 space-y-6">
+      {/* 1. Greeting & Context with Primary CTA */}
+      <div className="rounded-xl border border-slate-900 bg-slate-900 text-white p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[11px] font-bold tracking-wider text-emerald-400 uppercase">
+              Operational Pipeline Online
+            </span>
+            <span className="text-slate-600">•</span>
+            <span className="text-xs text-slate-400">Tuesday, Sep 8, 2026</span>
+          </div>
+
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            Good morning, Alex
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-300">
+            You have <strong className="text-white font-semibold">3 customer meetings</strong> scheduled today.
+          </p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Link href="/meeting/meet_001/live">
-            <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white flex items-center space-x-1.5">
-              <Mic className="h-3.5 w-3.5" />
-              <span>Enter Live Consultation (In Progress)</span>
+
+        {/* Primary CTA: Open Next Meeting */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <Link href={`/meeting/${nextMeeting.id}`}>
+            <Button
+              size="lg"
+              className="bg-rose-600 hover:bg-rose-700 text-white font-bold flex items-center space-x-2 shadow-md cursor-pointer"
+            >
+              <span>Open Next Meeting</span>
+              <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </Link>
+          <Link href={`/meeting/${nextMeeting.id}/live`}>
+            <Button
+              size="lg"
+              variant="outline"
+              className="bg-slate-800 text-slate-200 hover:bg-slate-700 border-slate-700 font-semibold cursor-pointer"
+            >
+              <span>Jump to Live Cockpit</span>
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* Metrics Row */}
+      {/* 2. Quick Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 space-y-1">
-            <span className="text-[11px] font-medium text-slate-500">Active Monthly Pipeline</span>
-            <div className="text-xl font-bold text-slate-900">$8,450,000</div>
-            <div className="text-[10px] text-emerald-600 font-medium flex items-center">
-              <TrendingUp className="h-3 w-3 mr-1" /> +14.2% vs last month
-            </div>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Today's Meetings"
+          value="3"
+          subtitle="2 upcoming • 1 active session"
+          icon={<Calendar className="h-4 w-4" />}
+          badge={
+            <span className="text-[10px] font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full animate-pulse">
+              1 LIVE
+            </span>
+          }
+        />
 
-        <Card>
-          <CardContent className="p-4 space-y-1">
-            <span className="text-[11px] font-medium text-slate-500">TRID / TILA Compliance Score</span>
-            <div className="text-xl font-bold text-emerald-700">98.5%</div>
-            <div className="text-[10px] text-slate-500">Zero unmitigated infractions</div>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Follow-Ups Due"
+          value="2"
+          subtitle="1 urgent compliance item"
+          trendText="Action required today"
+          trendDirection="down"
+          isPositiveTrend={false}
+          icon={<AlertCircle className="h-4 w-4" />}
+        />
 
-        <Card>
-          <CardContent className="p-4 space-y-1">
-            <span className="text-[11px] font-medium text-slate-500">Copilot Nudge Acceptance</span>
-            <div className="text-xl font-bold text-slate-900">88.5%</div>
-            <div className="text-[10px] text-slate-500">Target benchmark: 85.0%</div>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Open Tasks"
+          value="4"
+          subtitle="Form 1003 conditions pending"
+          trendText="2 borrower • 2 officer"
+          trendDirection="neutral"
+          icon={<ListTodo className="h-4 w-4" />}
+        />
 
-        <Card>
-          <CardContent className="p-4 space-y-1">
-            <span className="text-[11px] font-medium text-slate-500">Time-to-1003 Application</span>
-            <div className="text-xl font-bold text-slate-900">4.2 hrs</div>
-            <div className="text-[10px] text-emerald-600 font-medium">-32% reduction via copilot</div>
-          </CardContent>
-        </Card>
+        <MetricCard
+          title="Information Completeness"
+          value="84.7%"
+          subtitle="Benchmark &ge; 80.0%"
+          trendText="+6.4% this week"
+          trendDirection="up"
+          isPositiveTrend={true}
+          icon={<PieChart className="h-4 w-4" />}
+        />
       </div>
 
-      {/* Main Section: Active & Scheduled Consultations */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Meeting Queue */}
-        <div className="lg:col-span-2 space-y-4">
+      {/* 3. Main Dashboard Layout: Today's Meetings & Tasks */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Today's Scheduled & Active Meetings (8 cols) */}
+        <div className="lg:col-span-8 space-y-4">
           <Card>
-            <CardHeader className="py-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-sm font-semibold">Today&apos;s Scheduled Consultations</CardTitle>
-              <span className="text-xs text-slate-500">Tuesday, Sep 8, 2026</span>
+            <CardHeader className="py-3.5 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-sm sm:text-base font-bold text-slate-900">
+                  Today&apos;s Customer Meetings
+                </CardTitle>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Ordered chronologically by appointment schedule
+                </p>
+              </div>
+
+              <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md">
+                3 Total Consultations
+              </span>
             </CardHeader>
-            <CardContent className="p-0 divide-y divide-slate-100">
-              {/* Meeting Item 1: Active (Miller Family) */}
-              <div className="p-4 bg-red-50/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white animate-pulse">
-                      LIVE NOW
-                    </span>
-                    <h4 className="text-sm font-bold text-slate-900">
-                      John Miller & Sarah Miller — First-Time Homebuyer
-                    </h4>
-                  </div>
-                  <div className="text-xs text-slate-600 flex items-center space-x-3">
-                    <span className="flex items-center">
-                      <Clock className="h-3 w-3 mr-1 text-slate-400" /> 10:00 AM – 10:45 AM
-                    </span>
-                    <span>•</span>
-                    <span>Target: $585,000 Single Family (South Austin)</span>
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    Flagged: 1 Prohibited Approval Statement retracted • 1 BMW lease captured
-                  </div>
-                </div>
 
-                <div className="flex items-center space-x-2 shrink-0">
-                  <Link href="/meeting/meet_001/live">
-                    <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
-                      Join Live Cockpit
-                    </Button>
-                  </Link>
-                  <Link href="/meeting/meet_001">
-                    <Button size="sm" variant="outline">
-                      Briefing
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-
-              {/* Meeting Item 2: Scheduled */}
-              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700">
-                      SCHEDULED
-                    </span>
-                    <h4 className="text-sm font-semibold text-slate-900">
-                      David & Emily Chen — Rate/Term Refinance
-                    </h4>
-                  </div>
-                  <div className="text-xs text-slate-500 flex items-center space-x-3">
-                    <span className="flex items-center">
-                      <Clock className="h-3 w-3 mr-1 text-slate-400" /> 1:30 PM – 2:00 PM
-                    </span>
-                    <span>•</span>
-                    <span>Current Loan: $420,000 at 7.25% • Target: 6.25% Fixed</span>
-                  </div>
-                </div>
-
-                <Button size="sm" variant="outline" disabled>
-                  Ready at 1:25 PM
-                </Button>
-              </div>
-
-              {/* Meeting Item 3: Completed */}
-              <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 opacity-80">
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800">
-                      COMPLETED
-                    </span>
-                    <h4 className="text-sm font-semibold text-slate-900">
-                      Robert Garcia — Jumbo Loan Pre-Approval
-                    </h4>
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    9:00 AM • Verified 8 Form 1003 facts • Synced to Encompass
-                  </div>
-                </div>
-
-                <Link href="/meeting/meet_001/summary">
-                  <Button size="sm" variant="ghost">
-                    View Summary
-                  </Button>
-                </Link>
-              </div>
+            <CardContent className="p-4 space-y-3">
+              {meetings.map((meeting, index) => (
+                <MeetingCard
+                  key={meeting.id}
+                  meeting={meeting}
+                  isNextMeeting={index === 0}
+                />
+              ))}
             </CardContent>
           </Card>
+
+          {/* Quick Guidance Card */}
+          <div className="p-4 rounded-lg bg-blue-50/60 border border-blue-200 flex items-start space-x-3 text-xs">
+            <Sparkles className="h-4 w-4 text-blue-700 shrink-0 mt-0.5" />
+            <div>
+              <span className="font-bold text-blue-900 block">
+                Next Best LO Recommendation:
+              </span>
+              <p className="text-blue-800 mt-0.5 leading-relaxed">
+                Prior to your 09:30 AM consultation with John & Sarah Miller, verify whether 2-year Schedule C tax returns have been uploaded. The Darwix TRID Guard is active to prevent unauthorized verbal approval commitments.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Right 1 Col: Quick Links & Recent Alerts */}
-        <div className="space-y-4">
+        {/* Right Column: Priority Follow-Up Tasks & Compliance Guardrails (4 cols) */}
+        <div className="lg:col-span-4 space-y-4">
+          {/* Priority Follow-up Tasks */}
+          <Card>
+            <CardHeader className="py-3 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-bold">Follow-Up Action Items</CardTitle>
+              <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                {followUpTasks.length} Active
+              </span>
+            </CardHeader>
+            <CardContent className="p-0">
+              <TaskList initialTasks={followUpTasks} />
+            </CardContent>
+          </Card>
+
+          {/* Regulatory Guardrail Real-Time Status */}
           <Card>
             <CardHeader className="py-3">
-              <CardTitle className="text-sm">Compliance Guardrail Status</CardTitle>
+              <CardTitle className="text-sm font-bold flex items-center space-x-1.5">
+                <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                <span>Active Compliance Guardrails</span>
+              </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-3 text-xs">
-              <div className="flex items-center justify-between text-slate-700">
-                <span className="flex items-center">
-                  <ShieldCheck className="h-4 w-4 text-emerald-600 mr-2" />
-                  TRID Informal Approval Rule
+            <CardContent className="p-4 space-y-2.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-700 font-medium">TRID Informal Approval Check</span>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  ENFORCED
                 </span>
-                <span className="font-semibold text-emerald-700">Enforced</span>
               </div>
-              <div className="flex items-center justify-between text-slate-700">
-                <span className="flex items-center">
-                  <ShieldCheck className="h-4 w-4 text-emerald-600 mr-2" />
-                  TILA Reg Z APR Oral Disclosure
+              <div className="flex items-center justify-between">
+                <span className="text-slate-700 font-medium">TILA Reg Z Oral APR Mandate</span>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  ENFORCED
                 </span>
-                <span className="font-semibold text-emerald-700">Enforced</span>
               </div>
-              <div className="flex items-center justify-between text-slate-700">
-                <span className="flex items-center">
-                  <ShieldCheck className="h-4 w-4 text-emerald-600 mr-2" />
-                  Dodd-Frank QM Income Verification
+              <div className="flex items-center justify-between">
+                <span className="text-slate-700 font-medium">Fannie Mae Liability Omission Guard</span>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  ENFORCED
                 </span>
-                <span className="font-semibold text-emerald-700">Enforced</span>
               </div>
-              <div className="flex items-center justify-between text-slate-700">
-                <span className="flex items-center">
-                  <ShieldCheck className="h-4 w-4 text-emerald-600 mr-2" />
-                  Fannie Mae Liabilities Omission
+              <div className="flex items-center justify-between">
+                <span className="text-slate-700 font-medium">Dodd-Frank ATR/QM Verification</span>
+                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  ENFORCED
                 </span>
-                <span className="font-semibold text-emerald-700">Enforced</span>
               </div>
             </CardContent>
           </Card>
 
+          {/* Enterprise Connectors Status */}
           <Card>
             <CardHeader className="py-3">
-              <CardTitle className="text-sm">Enterprise System Connections</CardTitle>
+              <CardTitle className="text-sm font-bold">Enterprise System Status</CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-2.5 text-xs">
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600">Encompass LOS (MISMO 3.4)</span>
-                <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-mono font-medium">
+            <CardContent className="p-4 space-y-2 text-xs">
+              <div className="flex justify-between items-center text-slate-700">
+                <span>Encompass LOS (MISMO 3.4)</span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                  SYNC READY
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-slate-700">
+                <span>Salesforce Financial Services Cloud</span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
                   CONNECTED
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600">Salesforce Financial Services Cloud</span>
-                <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-mono font-medium">
-                  CONNECTED
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-slate-600">Optimal Blue PPE</span>
-                <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-mono font-medium">
-                  CONNECTED
+              <div className="flex justify-between items-center text-slate-700">
+                <span>Optimal Blue PPE Rates</span>
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                  LOADED
                 </span>
               </div>
             </CardContent>
