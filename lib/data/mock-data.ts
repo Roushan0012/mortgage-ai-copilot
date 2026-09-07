@@ -9,7 +9,10 @@ import {
   AuditEvent,
   MeetingSummary,
   SpeakerRole,
+  PostMeetingAction,
+  DocumentItem,
 } from "@/types";
+
 
 // ============================================================================
 // 1. Realistic Fictional Customer: John & Sarah Miller
@@ -1351,3 +1354,168 @@ export const mockAuditEvents: AuditEvent[] = [
     timestamp: "2026-09-08T10:05:05Z",
   },
 ];
+
+// ============================================================================
+// 9. Post-Meeting Action Center Items (Approval Gates & Next Actions)
+// ============================================================================
+
+export const mockPostMeetingActions: PostMeetingAction[] = [
+  {
+    id: "act_01",
+    action: "Request Sarah Miller 2024–2025 Schedule C Tax Returns",
+    title: "Request Income Documentation",
+    reason: "Income discussed during meeting ($38,000 net) is stated but not verified under Dodd-Frank QM.",
+    owner: "Alex Vance",
+    dueDate: "Tomorrow (Sep 9, 5:00 PM)",
+    source: "ai_recommendation",
+    approvalRequired: true,
+    status: "ready_for_approval",
+    category: "documents",
+  },
+  {
+    id: "act_02",
+    action: "Prepare Encompass LOS Draft Update (MISMO 3.4)",
+    title: "Prepare LOS Update",
+    reason: "Capture verified consultation facts, stated income ledger, and BMW lease obligation into LOS draft.",
+    owner: "Alex Vance",
+    dueDate: "Today (Sep 8, 4:00 PM)",
+    source: "los_rule",
+    approvalRequired: true,
+    status: "ready_for_approval",
+    category: "los",
+  },
+  {
+    id: "act_03",
+    action: "Sync Consultation Notes & Lead Stage to Salesforce FSC",
+    title: "Sync to CRM",
+    reason: "Update Lead CRM-LEAD-10482 to 'Qualified / Needs Documentation' and schedule follow-up milestones.",
+    owner: "Alex Vance",
+    dueDate: "Today (Sep 8, 3:30 PM)",
+    source: "ai_recommendation",
+    approvalRequired: true,
+    status: "ready_for_approval",
+    category: "crm",
+  },
+  {
+    id: "act_04",
+    action: "Collect Official Written Competitor Loan Estimate (Rocket Mortgage)",
+    title: "Collect Competitor Loan Estimate",
+    reason: "Verbal 6.125% rate quote cannot be matched without written Loan Estimate substantiating APR & fees.",
+    owner: "Alex Vance",
+    dueDate: "Sep 10, 12:00 PM",
+    source: "compliance_engine",
+    approvalRequired: true,
+    status: "ready_for_approval",
+    category: "compliance",
+  },
+  {
+    id: "act_05",
+    action: "Send Borrower Welcome & Document Upload Notification",
+    title: "Dispatch Borrower Notification",
+    reason: "Transmit encrypted borrower portal link to John & Sarah with potential verification items.",
+    owner: "Alex Vance",
+    dueDate: "Today (Sep 8, 4:30 PM)",
+    source: "ai_recommendation",
+    approvalRequired: true,
+    status: "ready_for_approval",
+    category: "communication",
+  },
+];
+
+// ============================================================================
+// 10. Document Checklist Items (Potential Documents to Verify)
+// ============================================================================
+
+export const mockDocumentItems: DocumentItem[] = [
+  {
+    id: "DOC-ITEM-301",
+    name: "30-Day Most Recent Pay Stubs (Apex Cloud Technologies LLC)",
+    borrowerName: "John Miller",
+    category: "income",
+    status: "UPLOADED",
+    reason: "Verifies stated W-2 base salary of $11,250/month and YTD earnings.",
+    potentialOnly: true,
+    requestedAt: "2026-09-07T10:00:00Z",
+    uploadedAt: "2026-09-08T09:15:00Z",
+    fileSize: "1.8 MB PDF",
+  },
+  {
+    id: "DOC-ITEM-302",
+    name: "2024 & 2025 Form W-2 Wage and Tax Statements",
+    borrowerName: "John Miller",
+    category: "income",
+    status: "VERIFIED",
+    reason: "Two-year continuous W-2 history required for conventional conforming loan.",
+    potentialOnly: true,
+    requestedAt: "2026-09-07T10:00:00Z",
+    uploadedAt: "2026-09-08T08:30:00Z",
+    fileSize: "2.4 MB PDF",
+    reviewNotes: "Verified by Alex Vance. Matched 1003 employer details.",
+  },
+  {
+    id: "DOC-ITEM-303",
+    name: "Sarah Miller: 2024 & 2025 Form 1040 Federal Tax Returns (Schedule C)",
+    borrowerName: "Sarah Miller",
+    category: "income",
+    status: "REQUESTED",
+    reason: "Self-employment stated income ($38k/yr) requires 24-month tax return average under QM rules.",
+    potentialOnly: true,
+    requestedAt: "2026-09-08T10:45:00Z",
+  },
+  {
+    id: "DOC-ITEM-304",
+    name: "Sarah Miller: Year-to-Date Profit & Loss (P&L) Statement & 3-Mo Business Statements",
+    borrowerName: "Sarah Miller",
+    category: "income",
+    status: "NOT_REQUESTED",
+    reason: "Validates ongoing business cashflow stability for graphic design practice.",
+    potentialOnly: true,
+  },
+  {
+    id: "DOC-ITEM-305",
+    name: "60-Day Consecutive Asset Statements (Chase Checking & Fidelity Investment)",
+    borrowerName: "John Miller",
+    category: "asset",
+    status: "VERIFIED",
+    reason: "Seasoning and sourcing verification for $85,000 down payment and 6-month reserves.",
+    potentialOnly: true,
+    requestedAt: "2026-09-07T10:00:00Z",
+    uploadedAt: "2026-09-08T07:45:00Z",
+    fileSize: "4.2 MB PDF",
+    reviewNotes: "Liquid balances confirmed: $22k checking + $72k investment.",
+  },
+  {
+    id: "DOC-ITEM-306",
+    name: "Government-Issued Photo Identification (Texas Driver's Licenses)",
+    borrowerName: "John & Sarah Miller",
+    category: "identity",
+    status: "VERIFIED",
+    reason: "USA PATRIOT Act Customer Identification Program (CIP) compliance.",
+    potentialOnly: true,
+    requestedAt: "2026-09-07T10:00:00Z",
+    uploadedAt: "2026-09-07T18:20:00Z",
+    fileSize: "1.1 MB JPG",
+    reviewNotes: "Identity confirmed against credit bureau record.",
+  },
+  {
+    id: "DOC-ITEM-307",
+    name: "Official Written Competitor Loan Estimate (Rocket Mortgage)",
+    borrowerName: "John Miller",
+    category: "competitive",
+    status: "REQUESTED",
+    reason: "Written TRID Loan Estimate required to substantiate price match request on 6.125% quote.",
+    potentialOnly: true,
+    requestedAt: "2026-09-08T10:45:00Z",
+  },
+  {
+    id: "DOC-ITEM-308",
+    name: "BMW Auto Lease Agreement & 12-Month Payment Ledger",
+    borrowerName: "Sarah Miller",
+    category: "liability",
+    status: "REQUESTED",
+    reason: "Identified in consultation meeting; lease obligation must be entered into liabilities ledger.",
+    potentialOnly: true,
+    requestedAt: "2026-09-08T10:45:00Z",
+  },
+];
+

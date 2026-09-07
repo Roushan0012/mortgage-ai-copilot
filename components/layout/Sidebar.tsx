@@ -13,6 +13,8 @@ import {
   Settings,
   Sparkles,
   X,
+  Building,
+  Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -59,12 +61,27 @@ export function Sidebar({
       badge: "4",
     },
     {
+      name: "Operations",
+      href: "/operations",
+      icon: Building,
+      isActive: pathname === "/operations",
+      badge: "3",
+    },
+    {
       name: "Manager",
       href: "/manager",
       icon: ShieldCheck,
       isActive: pathname === "/manager",
     },
+    {
+      name: "Integrations",
+      href: "/settings/integrations",
+      icon: Layers,
+      isActive: pathname.startsWith("/settings/integrations"),
+      badge: "MOCK",
+    },
   ];
+
 
   const lowerNav = [
     {

@@ -422,13 +422,85 @@ export interface LoanOfficerOverview {
 // 6. Enterprise Integrations & Audit Logging
 // ============================================================================
 
-export type IntegrationType = 'salesforce_crm' | 'encompass_los' | 'optimal_blue_ppe' | 'credit_bureau';
+export type IntegrationType =
+  | 'salesforce_crm'
+  | 'encompass_los'
+  | 'document_system'
+  | 'communication_gateway'
+  | 'optimal_blue_ppe'
+  | 'credit_bureau'
+  | 'aus_underwriting'
+  | 'title_escrow';
+
 export type IntegrationStatus = 'idle' | 'in_progress' | 'succeeded' | 'failed';
+
+export type IntegrationStatusLevel = 'LIVE' | 'MOCKED' | 'FUTURE' | 'DISABLED' | 'ERROR';
+
+export type ExecutionState = 'SUCCESS' | 'PENDING' | 'FAILED' | 'RETRYABLE';
+
+export type DocumentStatus =
+  | 'NOT_REQUESTED'
+  | 'REQUESTED'
+  | 'UPLOADED'
+  | 'UNDER_REVIEW'
+  | 'VERIFIED'
+  | 'REJECTED'
+  | 'MISSING';
+
+export type LOSStage =
+  | 'Discovery'
+  | 'Information Collection'
+  | 'Documentation Pending'
+  | 'Application Started'
+  | 'Verification'
+  | 'Underwriting'
+  | 'Approved'
+  | 'Closed';
+
+export type VerificationState = 'STATED' | 'VERIFIED' | 'CONFLICTED' | 'UNVERIFIED';
+
+export interface DocumentItem {
+  id: string;
+  name: string;
+  borrowerName: string;
+  category: 'income' | 'asset' | 'identity' | 'liability' | 'property' | 'competitive';
+  status: DocumentStatus;
+  reason: string;
+  potentialOnly: boolean; // "Potential documents to verify"
+  requestedAt?: string;
+  uploadedAt?: string;
+  fileSize?: string;
+  reviewNotes?: string;
+}
+
+export interface PostMeetingAction {
+  id: string;
+  action: string;
+  title: string;
+  reason: string;
+  owner: string;
+  dueDate: string;
+  source: 'ai_recommendation' | 'compliance_engine' | 'agent_manual' | 'los_rule';
+  approvalRequired: boolean;
+  status: 'ready_for_approval' | 'approved' | 'completed' | 'dismissed';
+  category: 'crm' | 'los' | 'documents' | 'communication' | 'compliance';
+  payload?: Record<string, unknown>;
+  executedAt?: string;
+  executionResult?: string;
+}
 
 export interface IntegrationEvent {
   id: string;
   integration: IntegrationType;
-  eventType: 'sync_1003_payload' | 'create_follow_up_task' | 'update_lead_status' | 'request_rate_scenario';
+  eventType:
+    | 'sync_1003_payload'
+    | 'create_follow_up_task'
+    | 'update_lead_status'
+    | 'request_rate_scenario'
+    | 'sync_crm'
+    | 'sync_los'
+    | 'request_documents'
+    | 'dispatch_communication';
   status: IntegrationStatus;
   payloadSummary: string;
   rawPayload?: Record<string, unknown>;
@@ -452,7 +524,19 @@ export interface AuditEvent {
     | 'agent_action_taken' 
     | 'intervention_escalated' 
     | 'summary_generated' 
-    | 'crm_los_synced';
+    | 'crm_los_synced'
+    | 'crm_sync_approved'
+    | 'crm_sync_completed'
+    | 'crm_sync_failed'
+    | 'los_update_approved'
+    | 'los_draft_updated'
+    | 'los_sync_failed'
+    | 'document_request_prepared'
+    | 'document_request_approved'
+    | 'document_request_dispatched'
+    | 'communication_approved'
+    | 'communication_sent'
+    | 'action_dismissed';
   meetingId: string;
   actor: {
     userId: string;
@@ -466,6 +550,16 @@ export interface AuditEvent {
     priorState?: unknown;
     newState?: unknown;
     notes?: string;
+    [key: string]: unknown;
   };
   timestamp: string;
+  // Section 19 unified audit event properties
+  actorType?: 'loan_officer' | 'system' | 'underwriter' | 'borrower' | 'manager';
+  action?: string;
+  entityType?: 'meeting' | 'customer' | 'lead' | 'loan_application' | 'document' | 'task';
+  entityId?: string;
+  source?: string;
+  status?: string;
+  metadata?: Record<string, unknown>;
 }
+

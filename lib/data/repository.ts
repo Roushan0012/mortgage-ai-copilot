@@ -9,6 +9,9 @@ import {
   InterventionStatus,
   AgentActionType,
   FollowUpTask,
+  PostMeetingAction,
+  DocumentItem,
+  DocumentStatus,
 } from "@/types";
 import {
   mockMillerCustomer,
@@ -21,7 +24,10 @@ import {
   mockAuditEvents,
   mockManagerMetrics,
   mockLoanOfficers,
+  mockPostMeetingActions,
+  mockDocumentItems,
 } from "./mock-data";
+
 import { generateId } from "@/lib/utils";
 
 /**
@@ -36,6 +42,8 @@ class MortgageRepository {
   private meetingSummaries: Map<string, MeetingSummary> = new Map();
   private interventions: Map<string, AIIntervention> = new Map();
   private auditEvents: AuditEvent[] = [];
+  private postMeetingActions: Map<string, PostMeetingAction> = new Map();
+  private documentItems: Map<string, DocumentItem> = new Map();
 
   constructor() {
     this.seed();
@@ -68,7 +76,18 @@ class MortgageRepository {
 
     // Seed audit events
     this.auditEvents = JSON.parse(JSON.stringify(mockAuditEvents));
+
+    // Seed post-meeting action items
+    mockPostMeetingActions.forEach((act) => {
+      this.postMeetingActions.set(act.id, JSON.parse(JSON.stringify(act)));
+    });
+
+    // Seed document items
+    mockDocumentItems.forEach((doc) => {
+      this.documentItems.set(doc.id, JSON.parse(JSON.stringify(doc)));
+    });
   }
+
 
   public getCustomer(id: string): Customer | null {
     return this.customers.get(id) || null;
@@ -174,6 +193,88 @@ class MortgageRepository {
     return fullEvent;
   }
 
+  public getPostMeetingActions(): PostMeetingAction[] {
+    return Array.from(this.postMeetingActions.values());
+  }
+
+  public getPostMeetingAction(id: string): PostMeetingAction | null {
+    return this.postMeetingActions.get(id) || null;
+  }
+
+  public updatePostMeetingActionStatus(
+    id: string,
+    status: PostMeetingAction["status"],
+    executionResult?: string
+  ): PostMeetingAction | null {
+    const act = this.postMeetingActions.get(id);
+    if (!act) return null;
+    act.status = status;
+    if (status === "completed") {
+      act.executedAt = new Date().toISOString();
+      act.executionResult = executionResult;
+    }
+    this.postMeetingActions.set(id, act);
+    return act;
+  }
+
+  public addPostMeetingAction(action: PostMeetingAction): PostMeetingAction {
+    this.postMeetingActions.set(action.id, action);
+    return action;
+  }
+
+  public getDocumentItems(): DocumentItem[] {
+    return Array.from(this.documentItems.values());
+  }
+
+  public getDocumentItem(id: string): DocumentItem | null {
+    return this.documentItems.get(id) || null;
+  }
+
+  public updateDocumentItem(
+    id: string,
+    status: DocumentStatus,
+    notes?: string
+  ): DocumentItem | null {
+    const doc = this.documentItems.get(id);
+    if (!doc) return null;
+    doc.status = status;
+    if (notes) doc.reviewNotes = notes;
+    if (status === "UPLOADED" && !doc.uploadedAt) {
+      doc.uploadedAt = new Date().toISOString();
+    }
+    this.documentItems.set(id, doc);
+    return doc;
+  }
+
+  public getOperationsOverview() {
+    const allDocs = Array.from(this.documentItems.values());
+    const allActions = Array.from(this.postMeetingActions.values());
+    const allInterventions = Array.from(this.interventions.values());
+
+    return {
+      documentVerificationQueue: allDocs.filter((d) => d.status === "UPLOADED" || d.status === "UNDER_REVIEW"),
+      missingInformation: allDocs.filter((d) => d.status === "REQUESTED" || d.status === "MISSING"),
+      verifiedDocuments: allDocs.filter((d) => d.status === "VERIFIED"),
+      unresolvedConflicts: [
+        {
+          id: "conf_01",
+          type: "liabilities_omission",
+          title: "BMW Auto Lease ($590/mo) Omission Conflict",
+          description: "Borrower initially stated desire to leave lease off Form 1003. Verified lease must be captured in liabilities ledger under Fannie Mae B3-6-01.",
+          status: "pending_back_office_verification",
+          priority: "High",
+          borrowerName: "Sarah Miller",
+        },
+      ],
+      complianceEscalations: allInterventions.filter(
+        (i) => i.requiresEscalation || i.severity === "critical" || i.severity === "CRITICAL"
+      ),
+      pendingApprovals: allActions.filter((a) => a.status === "ready_for_approval"),
+      completedActions: allActions.filter((a) => a.status === "completed"),
+      totalActionsCount: allActions.length,
+    };
+  }
+
   public getManagerMetrics(): ManagerMetric[] {
     return mockManagerMetrics;
   }
@@ -188,9 +289,12 @@ class MortgageRepository {
     this.meetingSummaries.clear();
     this.interventions.clear();
     this.auditEvents = [];
+    this.postMeetingActions.clear();
+    this.documentItems.clear();
     this.seed();
   }
 }
 
 // Export singleton repository instance
 export const repository = new MortgageRepository();
+

@@ -7,20 +7,24 @@ import {
   Calendar,
   CheckCircle2,
   AlertTriangle,
-  RotateCcw,
-  PieChart,
   Check,
+  ArrowRight,
 } from "lucide-react";
+
 import { repository } from "@/lib/data/repository";
-import { MetricCard } from "@/components/shared/MetricCard";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/shared/Card";
 import { Button } from "@/components/shared/Button";
+
 
 export default function ManagerDashboardPage() {
   const loanOfficers = repository.getLoanOfficers();
 
-  const [activeTab, setActiveTab] = useState<"performance" | "activity" | "escalations">("performance");
+  const [activeTab, setActiveTab] = useState<
+    "performance" | "activity" | "escalations" | "approvals" | "funnel"
+  >("performance");
   const [escalationApproved, setEscalationApproved] = useState(false);
+  const pendingActions = repository.getPostMeetingActions().filter((a) => a.status === "ready_for_approval");
+
 
   // Extended mock activity feed items
   const activityFeed = [
@@ -88,57 +92,68 @@ export default function ManagerDashboardPage() {
         </div>
       </div>
 
-      {/* 2. Top Quick Metrics (5 Metrics) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-        <MetricCard
-          title="Today's Meetings"
-          value="12"
-          subtitle="Across 3 branches"
-          icon={<Calendar className="h-4 w-4" />}
-        />
+      {/* 2. Workflow Health Section (Requirement 16) */}
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+          <div className="flex items-center space-x-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+              Branch Origination Workflow Health
+            </h2>
+          </div>
+          <span className="text-[11px] font-mono text-slate-400">
+            Real-time pipeline synchronization
+          </span>
+        </div>
 
-        <MetricCard
-          title="Completed Meetings"
-          value="7"
-          subtitle="5 remaining today"
-          icon={<CheckCircle2 className="h-4 w-4" />}
-          trendText="+15% vs target"
-          trendDirection="up"
-          isPositiveTrend={true}
-        />
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-center">
+          <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
+            <span className="text-[10px] text-slate-500 block font-semibold uppercase">Meetings Today</span>
+            <span className="text-lg font-black text-slate-900 font-mono">8</span>
+            <span className="text-[9px] text-slate-400 block">3 Branches</span>
+          </div>
 
-        <MetricCard
-          title="Follow-Ups Due"
-          value="5"
-          subtitle="2 urgent milestones"
-          icon={<RotateCcw className="h-4 w-4" />}
-        />
+          <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
+            <span className="text-[10px] text-slate-500 block font-semibold uppercase">Summaries Done</span>
+            <span className="text-lg font-black text-emerald-700 font-mono">8</span>
+            <span className="text-[9px] text-emerald-600 block">100% Generated</span>
+          </div>
 
-        <MetricCard
-          title="Compliance Alerts"
-          value="1"
-          subtitle="Supervisor review required"
-          icon={<ShieldAlert className="h-4 w-4 text-amber-600" />}
-          badge={
-            <span className="text-[10px] font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full animate-pulse">
-              1 PENDING
-            </span>
-          }
-        />
+          <div className="p-2.5 rounded bg-amber-50/60 border border-amber-200">
+            <span className="text-[10px] text-amber-900 block font-semibold uppercase">Pending Approvals</span>
+            <span className="text-lg font-black text-amber-900 font-mono">3</span>
+            <span className="text-[9px] text-amber-700 block">Gated Actions</span>
+          </div>
 
-        <MetricCard
-          title="Info Completeness"
-          value="84.7%"
-          subtitle="Target benchmark: 80%"
-          trendText="+6.4% this week"
-          trendDirection="up"
-          isPositiveTrend={true}
-          icon={<PieChart className="h-4 w-4" />}
-        />
+          <div className="p-2.5 rounded bg-blue-50/60 border border-blue-200">
+            <span className="text-[10px] text-blue-900 block font-semibold uppercase">CRM Sync Pending</span>
+            <span className="text-lg font-black text-blue-900 font-mono">2</span>
+            <span className="text-[9px] text-blue-700 block">Salesforce FSC</span>
+          </div>
+
+          <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
+            <span className="text-[10px] text-slate-500 block font-semibold uppercase">LOS Updates Due</span>
+            <span className="text-lg font-black text-slate-900 font-mono">2</span>
+            <span className="text-[9px] text-slate-500 block">MISMO 3.4 Draft</span>
+          </div>
+
+          <div className="p-2.5 rounded bg-rose-50/60 border border-rose-200">
+            <span className="text-[10px] text-rose-900 block font-semibold uppercase">High-Risk Alerts</span>
+            <span className="text-lg font-black text-rose-900 font-mono">{escalationApproved ? 0 : 1}</span>
+            <span className="text-[9px] text-rose-700 block">TRID Review</span>
+          </div>
+
+          <div className="p-2.5 rounded bg-slate-50 border border-slate-200">
+            <span className="text-[10px] text-slate-500 block font-semibold uppercase">Overdue Follow-ups</span>
+            <span className="text-lg font-black text-slate-700 font-mono">2</span>
+            <span className="text-[9px] text-slate-400 block">Under 24 Hours</span>
+          </div>
+        </div>
       </div>
 
       {/* 3. Navigation Tabs */}
       <div className="flex items-center space-x-2 border-b border-slate-200 pb-2">
+
         <button
           type="button"
           onClick={() => setActiveTab("performance")}
@@ -166,6 +181,31 @@ export default function ManagerDashboardPage() {
         </button>
         <button
           type="button"
+          onClick={() => setActiveTab("approvals")}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors flex items-center space-x-1.5 cursor-pointer ${
+            activeTab === "approvals"
+              ? "bg-slate-900 text-white shadow-xs"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+          }`}
+        >
+          <span>Pending Approvals</span>
+          <span className="px-1.5 py-0.2 bg-amber-600 text-white text-[10px] font-bold rounded-full">
+            {pendingActions.length}
+          </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("funnel")}
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+            activeTab === "funnel"
+              ? "bg-slate-900 text-white shadow-xs"
+              : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+          }`}
+        >
+          Conversion Funnel
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab("activity")}
           className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
             activeTab === "activity"
@@ -176,6 +216,7 @@ export default function ManagerDashboardPage() {
           Meeting Activity Feed ({activityFeed.length})
         </button>
       </div>
+
 
       {/* TAB 1: AGENT PERFORMANCE TABLE */}
       {activeTab === "performance" && (
@@ -305,7 +346,96 @@ export default function ManagerDashboardPage() {
         </div>
       )}
 
-      {/* TAB 3: MEETING & ACTIVITY FEED */}
+      {/* TAB 3: PENDING APPROVALS QUEUE */}
+      {activeTab === "approvals" && (
+        <Card>
+          <CardHeader className="py-3.5 bg-slate-50/50 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-sm font-bold">Branch Agent Pending Approval Queue</CardTitle>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Enterprise approval gates requiring loan officer or supervisor sign-off before downstream execution
+              </p>
+            </div>
+            <span className="text-xs font-semibold text-amber-900 bg-amber-100 px-2.5 py-0.5 rounded border border-amber-300">
+              {pendingActions.length} Actions Gated
+            </span>
+          </CardHeader>
+          <CardContent className="p-0 divide-y divide-slate-100 text-xs">
+            {pendingActions.map((act) => (
+              <div key={act.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 hover:bg-slate-50/60 transition-colors">
+                <div className="space-y-1 max-w-2xl">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-slate-900">{act.action}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.2 rounded">
+                      Approval Required
+                    </span>
+                    <span className="text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700 px-1.5 py-0.2 rounded">
+                      {act.category.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">{act.reason}</p>
+                  <div className="flex items-center space-x-3 text-[11px] text-slate-500">
+                    <span>Officer: <strong className="text-slate-700">{act.owner}</strong></span>
+                    <span>•</span>
+                    <span>Due: <strong className="text-slate-700">{act.dueDate}</strong></span>
+                    <span>•</span>
+                    <span>Source: <strong className="text-slate-700">{act.source.replace(/_/g, " ")}</strong></span>
+                  </div>
+                </div>
+
+                <div className="shrink-0 self-end md:self-center">
+                  <Link href="/meeting/meet_001/summary">
+                    <Button size="sm" className="bg-slate-900 text-white font-semibold text-xs cursor-pointer">
+                      <span>Review in Meeting Summary</span>
+                      <ArrowRight className="h-3 w-3 ml-1" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* TAB 4: CONVERSION FUNNEL */}
+      {activeTab === "funnel" && (
+        <Card>
+          <CardHeader className="py-3.5 bg-slate-50/50">
+            <CardTitle className="text-sm font-bold">Branch Customer Origination Funnel</CardTitle>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Conversion drop-off across discovery, information collection, documentation, and underwriting milestones
+            </p>
+          </CardHeader>
+          <CardContent className="p-6 space-y-4 text-xs">
+            {[
+              { stage: "1. Lead / Initial Inquiry", count: 42, pct: 100, color: "bg-slate-800" },
+              { stage: "2. Consultation Scheduled", count: 33, pct: 78.5, color: "bg-blue-700" },
+              { stage: "3. Consultation Completed", count: 26, pct: 61.9, color: "bg-blue-600" },
+              { stage: "4. Information Collection", count: 19, pct: 45.2, color: "bg-indigo-600" },
+              { stage: "5. Documentation Pending", count: 13, pct: 30.9, color: "bg-amber-600" },
+              { stage: "6. Underwriting Review", count: 8, pct: 19.0, color: "bg-rose-600" },
+              { stage: "7. Approved / Clear to Close", count: 5, pct: 11.9, color: "bg-emerald-600" },
+            ].map((f) => (
+              <div key={f.stage} className="space-y-1">
+                <div className="flex justify-between text-xs font-semibold">
+                  <span className="text-slate-900">{f.stage}</span>
+                  <span className="font-mono text-slate-600">
+                    {f.count} applications ({f.pct}%)
+                  </span>
+                </div>
+                <div className="h-3 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full ${f.color} rounded-full transition-all duration-300`}
+                    style={{ width: `${f.pct}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* TAB 5: MEETING & ACTIVITY FEED */}
       {activeTab === "activity" && (
         <Card>
           <CardHeader className="py-3.5 bg-slate-50/50">
@@ -334,6 +464,7 @@ export default function ManagerDashboardPage() {
           </CardContent>
         </Card>
       )}
+
     </div>
   );
 }
