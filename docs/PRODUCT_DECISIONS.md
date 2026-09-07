@@ -188,8 +188,71 @@
 ### ADR-019: Conflict State for Contradictory Co-Borrower Liabilities
 - **Context**: When co-borrowers provide contradictory figures (e.g., John stating $500/mo and Sarah stating $1,200/mo), AI systems often make the mistake of averaging the numbers or picking the higher amount.
 - **Decision**: The copilot sets `totalMonthlyDebtStatus: "conflicted"` and records both figures with a prompt for the officer to clarify. The system never picks a winner or guesses.
+---
+
+### ADR-020: Opt-In Voice Assistance vs. Ambient Audio
+- **Context**: In live mortgage consultations, loan officers must maintain natural eye contact, conversational empathy, and professional rapport with borrowers. Unsolicited audio playback from an AI assistant creates severe cognitive overload and disorients the loan officer.
+- **Decision**: All voice playback is strictly opt-in and agent-initiated via explicit button clicks (`[Play Suggestion]`, `[Play Response]`, `[Play Question]`). The application never assumes the loan officer wants to hear audio.
 - **Consequences**:
-  - *Pros*: Upholds Form 1003 data integrity; forces verbal confirmation before formal underwriting submission.
-  - *Cons*: Leaves DTI in an unresolved state until the officer records the verified answer.
+  - *Pros*: The loan officer retains total situational control; eliminates unexpected audio bleed into telephone headsets; maintains a calm, professional advisory environment.
+  - *Cons*: Requires an explicit click from the officer rather than passive listening.
+
+---
+
+### ADR-021: Absolute Prohibition of Automatic AI Speech
+- **Context**: Autonomous conversational AI systems that speak directly to customers or interrupt active speech risk misrepresenting loan terms, triggering TRID violations, or generating confusion between the borrower and the licensed MLO.
+- **Decision**: The AI copilot is architected with a strict technical prohibition against auto-speaking. Voice synthesis is delivered exclusively through private agent headset channels and only when triggered by the agent. Under no circumstances does the system speak aloud into a customer-facing room or call bridge.
+- **Consequences**:
+  - *Pros*: Prevents catastrophic regulatory violations; ensures the licensed loan officer remains the sole voice of the lending institution.
+  - *Cons*: Limits fully autonomous conversational sales bot use cases (which are unacceptable in regulated U.S. mortgage originations).
+
+---
+
+### ADR-022: Explicit Agent Action Gating on Compliance Responses
+- **Context**: High and Critical compliance alerts (e.g., liability omission warnings under 18 U.S.C. § 1014, TRID informal approval corrections, undocumented income flagging) involve legal liability. Auto-reading a legal warning aloud to a borrower could prematurely terminate an otherwise salvageable customer relationship.
+- **Decision**: For all compliance interventions, the loan officer must review the structured card, inspect evidence if needed, and choose `[Use Suggested Response]` or `[Play Response]` deliberately. Spoken responses are crafted as constructive, collaborative phrasing rather than punitive compliance reprimands.
+- **Consequences**:
+  - *Pros*: Human discretion determines the most tactful, effective moment to verbally correct a regulatory gap; ensures compliant phrasing without harming customer trust.
+  - *Cons*: Relies on the loan officer to deliver or trigger the corrective phrasing.
+
+---
+
+### ADR-023: Voice as an Enhancement Rather Than a Core Dependency
+- **Context**: Enterprise mortgage sales environments experience varying internet connectivity, corporate firewall restrictions, and third-party API availability. If a voice service outage disabled the sales copilot, loan officers would lose real-time compliance protection.
+- **Decision**: Voice assistance is architected as an optional progressive enhancement layer. The entire text-based copilot (deterministic guardrails, 1003 fact ledger, contextual cards, summary generation, and audit logging) operates with 100% independence regardless of ElevenLabs availability.
+- **Consequences**:
+  - *Pros*: 100% uptime for core compliance and sales advisory functions; zero single-point-of-failure vulnerabilities on external speech APIs.
+  - *Cons*: Requires maintaining graceful fallback UI states and status indicators.
+
+---
+
+### ADR-024: Data Minimization & Privacy Protection in TTS Streaming
+- **Context**: The Gramm-Leach-Bliley Act (GLBA) and CFPB safeguarding rules strictly govern Nonpublic Personal Information (NPI). Sending raw borrower profiles, SSNs, credit scores, or internal institutional risk metrics to external voice cloud services creates unacceptable data leak vectors.
+- **Decision**: A strict text normalization and content-sanitization filter (`normalizeVoiceText`) executes on the server before transmitting text to ElevenLabs. All markdown formatting, internal confidence scores, audit IDs, and private customer attributes are stripped. Only approved, conversational, product-generated suggestion text is sent for speech synthesis.
+- **Consequences**:
+  - *Pros*: Guarantees zero NPI transmission to external TTS models; keeps audio natural, conversational, and devoid of awkward metadata readbacks.
+  - *Cons*: Restricts speech synthesis to pre-approved consultative text templates and normalized strings.
+
+---
+
+### ADR-025: Seamless Text & Browser Speech Fallback Hierarchy
+- **Context**: If an ElevenLabs API key is unconfigured, rate-limited (HTTP 429), or encountering network timeouts (HTTP 502), the loan officer should not see an error wall or broken UI.
+- **Decision**: Implemented a multi-tier resilient fallback:
+  1. *ElevenLabs Turbo v2.5*: High-fidelity, low-latency streaming TTS when configured.
+  2. *Browser SpeechSynthesis Fallback*: Native browser speech synthesis when ElevenLabs is unconfigured or offline, enabling offline demonstration and testing.
+  3. *Graceful Text-Only Mode*: Subtle, non-intrusive status indicator (`Voice offline (text only)`) while all card buttons, fact extraction, and copy actions remain fully operational.
+- **Consequences**:
+  - *Pros*: Bulletproof user experience; developers and evaluators without active ElevenLabs subscriptions can still test and experience voice workflows.
+  - *Cons*: Browser speech synthesis voices lack the high natural fidelity of ElevenLabs neural voices.
+
+---
+
+### ADR-026: Deferral of Real-Time Microphone STT to Phase 5
+- **Context**: Full real-time microphone speech-to-text (STT) requires client-side WebRTC audio streaming, acoustic echo cancellation, multi-party speaker diarization, background noise reduction, and telephony CTI adapters (Zoom Phone, Cisco Jabber, RingCentral).
+- **Decision**: Real-time microphone audio capture and live STT are intentionally deferred to Phase 5. In Phase 4, the application operates on a validated, multi-speaker simulated transcript stream with interactive pause, speed control, scenario restart, and manual text injection.
+- **Consequences**:
+  - *Pros*: Ensures reliable, repeatable, and fully testable compliance demonstrations (Sarah & John Miller scenarios) without acoustic variability or hardware microphone permissions issues.
+  - *Cons*: Does not accept live voice input from physical microphones during local testing.
+
 
 

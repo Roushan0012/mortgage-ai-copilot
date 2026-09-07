@@ -93,11 +93,38 @@ The architecture provides explicit handling for high-risk mortgage consultation 
 
 ---
 
-## Current Status: Phase 3 Implemented — Real-Time AI Copilot & Intervention Engine
+---
 
-**Phase 3 — Real-Time AI Copilot & Intervention Engine** is fully implemented, verified, and operational:
-- **Hybrid AI Architecture**: Pure deterministic rules (<10ms) enforce hard U.S. mortgage regulations with absolute priority over Groq LPU contextual LLM inferences.
-- **15-Stage Modular Pipeline**: Ingestion -> Normalization -> Speaker Verification -> Deterministic Rules -> AI Analysis -> Merged Precedence -> Confidence Assessment -> Severity Determination -> Object Construction -> Deduplication -> Severity Ranking -> Deck Limiting -> Officer Action -> Immutable Audit Event -> State Sync.
+## Current Status: Phase 4 Implemented — ElevenLabs Voice Copilot & Audio Experience
+
+**Phase 4 — ElevenLabs Voice Copilot & Realistic Audio Experience** is fully implemented, verified, and operational:
+- **ElevenLabs High-Fidelity TTS**: Integration of the official `@elevenlabs/elevenlabs-js` SDK streaming low-latency, natural audio (`eleven_turbo_v2_5`, Rachel voice `21m00Tcm4TlvDq8ikWAM`).
+- **Server-Side API Architecture**: Secure proxy route (`/api/voice/speak`) with strict boundaries (max 1,000 chars, metadata sanitization, zero browser key exposure).
+- **Agent-Controlled Audio Playback**: Strictly opt-in playback controls on actionable cards (`[Play Response]`, `[Play Question]`, `[Play Suggestion]`). AI never speaks automatically to the customer.
+- **Resilient Fallback Hierarchy**: Full multi-tier fallback (ElevenLabs Turbo v2.5 -> Browser SpeechSynthesis -> Non-blocking Text-Only Mode).
+
+---
+
+## Current Integration Status
+
+| Tier | Services / Components | Implementation State |
+| :--- | :--- | :--- |
+| **LIVE** | **Groq LPU Inference**<br>**ElevenLabs TTS** | - Real Groq Cloud SDK (`llama-3.3-70b-versatile` / `llama-3.1-8b-instant`)<br>- Real ElevenLabs TTS streaming (`@elevenlabs/elevenlabs-js`, `eleven_turbo_v2_5`)<br>- Full deterministic fallback if keys are omitted |
+| **SIMULATED** | **Meeting Transcript Stream**<br>**Customer Conversation**<br>**Enterprise Integrations** | - Scripted multi-party dialogue with John & Sarah Miller<br>- Real-time interval playback, speed control, and manual text injection<br>- Simulated Salesforce FSC, Encompass MISMO 3.4, and Optimal Blue adapters |
+| **DEFERRED** | **Microphone Capture**<br>**Real-Time STT**<br>**Direct LOS / CRM DB** | - Production browser microphone capture (WebRTC/CTI)<br>- Production live speech-to-text (Deepgram Nova-2)<br>- Direct enterprise database connectors and bi-directional LOS sync |
+
+---
+
+## Voice Assistance
+
+Darwix AI includes an optional voice assistance layer designed specifically for mortgage sales workflows:
+
+- **ElevenLabs TTS Integration**: Generates clear, professional verbal phrasing using the official `@elevenlabs/elevenlabs-js` package with the `eleven_turbo_v2_5` low-latency model.
+- **Server-Side API Architecture**: The client browser calls `POST /api/voice/speak` with sanitized text. The Next.js server validates inputs, checks authorization, queries ElevenLabs, and streams `audio/mpeg` back to the browser.
+- **Optional, Agent-Controlled Playback**: Voice is strictly advisory. The loan officer reviews the suggestion card and explicitly chooses `[Play Response]` or `[Play Question]`. The copilot **never auto-speaks** to borrowers or interrupts consultations.
+- **Defensive Content Normalization**: Before TTS, all markdown formatting, internal confidence scores, audit tags, and private customer identifiers are stripped.
+- **Resilient Fallback Behavior**: If the ElevenLabs key is unconfigured or rate-limited, the application gracefully falls back to browser `speechSynthesis` or text-only mode with clear messaging (*"Voice assistance is temporarily unavailable. You can still use the text suggestion."*). The core copilot remains 100% operational.
+- **Audited Verification**: Development-only `[Test Voice]` button in meeting settings allows safe voice testing with a fixed compliance sentence (*"Your next recommended step is to confirm the required documents."*), sending zero customer data.
 - **10 Core Origination Scenarios**: Comprehensive automated handling across informal approvals, interest rate disclosures, liability omissions, undocumented income, competitor promises, borrower conflicts, profiling gaps, closing follow-ups, loan product comparisons, and turnaround objections.
 - **Evidence-First Transparency**: Every intervention features an expandable evidence drawer showing the exact transcript quote, detection source (`RULE`, `AI`, or `HYBRID`), confidence score, and the unaddressed regulatory/financial risk.
 - **Anti-Spam & Nudge Fatigue Memory**: Per-meeting dismissal memory suppresses repetitive non-critical notifications while ensuring critical compliance hazards are never suppressed.
@@ -246,12 +273,14 @@ Darwix AI is designed with decoupled adapter contracts ready for enterprise depl
 │   ├── customer/               # Borrower profiles & 1003 ledger
 │   ├── layout/                 # Global AppShell, Sidebar, TopHeader
 │   ├── meeting/                # Transcript viewer, messages & audio visualizers
-│   └── shared/                 # Design system primitives (Badge, Button, Card, etc.)
+│   ├── shared/                 # Design system primitives (Badge, Button, Card, etc.)
+│   └── voice/                  # CopilotVoicePlayer, VoiceSettingsControl, VoiceContext
 ├── lib/
 │   ├── ai/                     # Groq LLM inference client & prompts
 │   ├── compliance/             # Deterministic compliance rule engine
 │   ├── interventions/          # Coordinator, arbiter, and action handlers
 │   ├── meeting/                # Meeting manager & state store
+│   ├── voice/                  # Centralized ElevenLabs configuration & text normalization
 │   ├── integrations/           # Encompass LOS & Salesforce CRM adapters
 │   ├── data/                   # In-memory repository & synthetic mock datasets
 │   ├── validation/             # Zod validation schemas
@@ -259,7 +288,8 @@ Darwix AI is designed with decoupled adapter contracts ready for enterprise depl
 ├── types/                      # Comprehensive TypeScript domain models
 └── docs/
     ├── ARCHITECTURE.md         # Full architecture specification & Mermaid diagrams
-    └── PRODUCT_DECISIONS.md    # Architecture decision records (ADRs)
+    ├── PRODUCT_DECISIONS.md    # Architecture decision records (ADRs)
+    └── VOICE.md                # ElevenLabs voice copilot specification & security guide
 ```
 
 ---

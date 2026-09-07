@@ -18,6 +18,8 @@ import {
 import { AIIntervention, AgentActionType } from "@/types";
 import { SeverityBadge } from "@/components/shared/SeverityBadge";
 import { Button } from "@/components/shared/Button";
+import { CopilotVoicePlayer } from "@/components/voice/CopilotVoicePlayer";
+import { isVoiceEligibleIntervention } from "@/lib/voice/config";
 import { cn } from "@/lib/utils";
 
 interface InterventionCardProps {
@@ -44,6 +46,10 @@ export function InterventionCard({
 
   const isResolved = intervention.status !== "pending";
   const isCritical = intervention.severity === "critical" || intervention.severity === "CRITICAL";
+  const isVoiceEligible = isVoiceEligibleIntervention(
+    intervention.category,
+    Boolean(intervention.suggestedResponse || intervention.exactMessage)
+  );
 
   const handleCopy = (text: string) => {
     navigator.clipboard?.writeText(text);
@@ -152,24 +158,31 @@ export function InterventionCard({
         <div className="rounded-md border border-slate-200 bg-white p-2.5 space-y-1 shadow-xs">
           <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500">
             <span>Suggested Verbal Response:</span>
-            <button
-              type="button"
-              onClick={() => handleCopy(intervention.suggestedResponse!)}
-              className="inline-flex items-center space-x-1 text-slate-400 hover:text-slate-700 cursor-pointer"
-              title="Copy to clipboard"
-            >
-              {copied ? (
-                <>
-                  <Check className="h-3 w-3 text-emerald-600" />
-                  <span className="text-emerald-600 font-medium">Copied</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="h-3 w-3" />
-                  <span>Copy</span>
-                </>
-              )}
-            </button>
+            <div className="flex items-center space-x-1.5">
+              <CopilotVoicePlayer
+                text={intervention.suggestedResponse!}
+                label="Play Response"
+                variant="inline"
+              />
+              <button
+                type="button"
+                onClick={() => handleCopy(intervention.suggestedResponse!)}
+                className="inline-flex items-center space-x-1 text-slate-400 hover:text-slate-700 cursor-pointer"
+                title="Copy to clipboard"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-3 w-3 text-emerald-600" />
+                    <span className="text-emerald-600 font-medium">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3 w-3" />
+                    <span>Copy</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
           <p className="text-xs font-medium text-slate-800 italic leading-relaxed">
             &ldquo;{intervention.suggestedResponse}&rdquo;
@@ -249,52 +262,77 @@ export function InterventionCard({
       {/* 7. Action Buttons or Resolved Status Banner */}
       <div className="pt-2 border-t border-slate-100">
         {isResolved ? (
-          <div className="flex flex-wrap items-center gap-2 py-1 text-xs font-semibold">
-            {intervention.status === "accepted" && (
-              <span className="inline-flex items-center text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
-                <CheckCircle2 className="h-4 w-4 mr-1.5 text-emerald-600" />
-                Recommendation Accepted
-              </span>
-            )}
-            {intervention.status === "dismissed" && (
-              <span className="inline-flex items-center text-slate-700 bg-slate-100 px-2.5 py-1 rounded border border-slate-200">
-                <XCircle className="h-4 w-4 mr-1.5 text-slate-400" />
-                Dismissed: {intervention.dismissalReason || "Officer discretionary"}
-              </span>
-            )}
-            {intervention.status === "escalated" && (
-              <span className="inline-flex items-center text-red-800 bg-red-50 px-2.5 py-1 rounded border border-red-200">
-                <ArrowUpRight className="h-4 w-4 mr-1.5 text-red-600" />
-                Escalated to Supervisor
-              </span>
+          <div className="flex flex-wrap items-center justify-between gap-2 py-1 text-xs font-semibold">
+            <div className="flex flex-wrap items-center gap-2">
+              {intervention.status === "accepted" && (
+                <span className="inline-flex items-center text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">
+                  <CheckCircle2 className="h-4 w-4 mr-1.5 text-emerald-600" />
+                  Recommendation Accepted
+                </span>
+              )}
+              {intervention.status === "dismissed" && (
+                <span className="inline-flex items-center text-slate-700 bg-slate-100 px-2.5 py-1 rounded border border-slate-200">
+                  <XCircle className="h-4 w-4 mr-1.5 text-slate-400" />
+                  Dismissed: {intervention.dismissalReason || "Officer discretionary"}
+                </span>
+              )}
+              {intervention.status === "escalated" && (
+                <span className="inline-flex items-center text-red-800 bg-red-50 px-2.5 py-1 rounded border border-red-200">
+                  <ArrowUpRight className="h-4 w-4 mr-1.5 text-red-600" />
+                  Escalated to Supervisor
+                </span>
+              )}
+            </div>
+
+            {intervention.suggestedResponse && (
+              <CopilotVoicePlayer
+                text={intervention.suggestedResponse}
+                label="Play Response"
+                variant="compact"
+              />
             )}
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-1.5">
             {/* 1. Use Suggested Response */}
-            {intervention.suggestedResponse && (
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleUseResponse}
-                className="bg-slate-900 hover:bg-slate-800 text-white"
-              >
-                Use Suggested Response
-              </Button>
+            {intervention.suggestedResponse && intervention.availableActions.includes("accept") && (
+              <>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleUseResponse}
+                  className="bg-slate-900 hover:bg-slate-800 text-white"
+                >
+                  Use Suggested Response
+                </Button>
+                <CopilotVoicePlayer
+                  text={intervention.suggestedResponse}
+                  label="Play Response"
+                  variant="button"
+                />
+              </>
             )}
 
-            {/* 2. Ask Question / Ask Clarifying Question */}
-            {(intervention.availableActions.includes("ask_question")) &&
-              !intervention.suggestedResponse && (
+            {/* 2. Ask Question / Ask Clarifying Question (Scenario 6 / questions) */}
+            {intervention.availableActions.includes("ask_question") && (
+              <>
                 <Button
                   variant="primary"
                   size="sm"
                   onClick={handleAskQuestion}
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
-                  Ask Question
+                  {intervention.category.toLowerCase().includes("conflict")
+                    ? "Ask Clarifying Question"
+                    : "Ask Question"}
                 </Button>
-              )}
+                <CopilotVoicePlayer
+                  text={intervention.suggestedResponse || intervention.exactMessage}
+                  label="Play Question"
+                  variant="button"
+                />
+              </>
+            )}
 
             {/* 3. Mark For Verification (Scenario 4) */}
             {intervention.availableActions.includes("mark_verification") && (
@@ -333,6 +371,17 @@ export function InterventionCard({
                 <span>Create Follow-up</span>
               </Button>
             )}
+
+            {/* General Play Suggestion for voice-eligible cards */}
+            {isVoiceEligible &&
+              !intervention.suggestedResponse &&
+              !intervention.availableActions.includes("ask_question") && (
+                <CopilotVoicePlayer
+                  text={intervention.exactMessage}
+                  label="Play Suggestion"
+                  variant="button"
+                />
+              )}
 
             {/* 6. Escalate button (Mandatory for critical items) */}
             {(intervention.availableActions.includes("escalate") || intervention.requiresEscalation) && (

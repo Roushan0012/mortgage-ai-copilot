@@ -240,7 +240,35 @@ Darwix AI is engineered to integrate seamlessly into a modern lender's technolog
 
 ---
 
-## 9. Security & Governance Model
+## 9. Voice Layer Architecture & Audio Pipeline (Phase 4)
+
+Darwix AI integrates an optional, agent-controlled voice copilot powered by **ElevenLabs Text-to-Speech (TTS)**:
+
+```
+Browser (Loan Officer Cockpit)
+   ↓ [1. Clicks 'Play Response' / 'Play Question' - strictly opt-in]
+Next.js Server Route (POST /api/voice/speak)
+   ↓ [2. Validates input <=1,000 chars, strips metadata/markdown, verifies context]
+ElevenLabs API (Stream endpoint, eleven_turbo_v2_5, voice: Rachel)
+   ↓ [3. Authenticated via ELEVENLABS_API_KEY on server only]
+Audio Stream (audio/mpeg chunked stream)
+   ↓ [4. Streamed back to client without temporary file storage]
+Browser Playback (CopilotVoicePlayer with local blob cache & Web Speech fallback)
+```
+
+### Key Architectural Tenets:
+1. **API Key Isolation**: `ELEVENLABS_API_KEY` is strictly confined to the server runtime. It is never exposed in JavaScript bundles, client code, URLs, or local storage.
+2. **Streaming Efficiency**: Audio is generated via `@elevenlabs/elevenlabs-js` streaming (`client.textToSpeech.stream`) and piped directly as `audio/mpeg` to the browser, minimizing latency without persistent file storage.
+3. **Bounded Memory Cache**: The client caches generated audio blobs by normalized text key (max 20 entries), eliminating redundant API calls and credit consumption when replaying suggestions.
+4. **Resilient Fallback Hierarchy**:
+   - Level 1: ElevenLabs Turbo v2.5 streaming TTS.
+   - Level 2: Native Browser SpeechSynthesis fallback (if ElevenLabs is unconfigured, offline, or rate-limited).
+   - Level 3: Non-blocking Text-Only mode with explicit status notification (*"Voice assistance is temporarily unavailable. You can still use the text suggestion."*).
+5. **Strict Agent Control**: AI voice never auto-speaks to the borrower and never interrupts ongoing dialogues. Playback is strictly initiated by explicit loan officer clicks.
+
+---
+
+## 10. Security & Governance Model
 
 - **Environment Secrets**: `GROQ_API_KEY` and `ELEVENLABS_API_KEY` are stored strictly in server-side runtime environments and never leaked to client bundles.
 - **NPI / PII Sanitization**: Bank account numbers, Social Security Numbers, and dates of birth are masked (`***-**-1234`) before passing to AI contextual prompts.
@@ -248,10 +276,11 @@ Darwix AI is engineered to integrate seamlessly into a modern lender's technolog
 
 ---
 
-## 10. Mocked vs. Real Components Matrix
+## 11. Mocked vs. Real Components Matrix
 
 | Component | Assessment Prototype State | Production Roadmap State |
 | :--- | :--- | :--- |
+| **Voice Assistance (TTS)** | **Real**: ElevenLabs SDK (`@elevenlabs/elevenlabs-js`) streaming TTS (`eleven_turbo_v2_5`) with browser fallback | Real: Enterprise private voice models & agent voice cloning |
 | **LLM Inference** | **Real**: Groq SDK (`llama-3.3-70b-versatile` / `llama-3.1-8b-instant`) with deterministic fallback | Real: Hybrid Groq (fast nudges) + Private Cloud Mistral/Llama for sensitive NPI |
 | **Deterministic Rules** | **Real**: Full pattern-matching rule engine with TRID/TILA/RESPA/QM rules | Real: Centralized rule repository managed by Lender Compliance Office |
 | **Audio Pipeline** | **Mocked / Simulated Stream**: Scripted multi-party dialogues with interactive playback & manual input | Real: WebRTC / WebSocket audio ingest with Deepgram Nova-2 / LiveKit |
@@ -261,7 +290,7 @@ Darwix AI is engineered to integrate seamlessly into a modern lender's technolog
 
 ---
 
-## 11. Future Production Roadmap
+## 12. Future Production Roadmap
 1. **Real-Time WebRTC Audio**: Low-latency bi-directional streaming via LiveKit/SIP trunking into branch telephony (Zoom Phone, Cisco Jabber, RingCentral).
 2. **Guideline RAG with Vector Database**: Ingestion of Fannie Mae Single Family Selling Guide, Freddie Mac Single-Family Seller/Servicer Guide, and lender-specific investor overlays using pgvector / Pinecone.
 3. **Automated AUS Simulation**: Pre-flight Fannie Mae Desktop Underwriter (DU) / Freddie Mac Loan Product Advisor (LPA) simulation during the call.

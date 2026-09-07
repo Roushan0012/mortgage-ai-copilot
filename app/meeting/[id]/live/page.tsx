@@ -24,6 +24,8 @@ import { CustomerContext } from "@/components/customer/CustomerContext";
 import { CopilotPanel } from "@/components/copilot/CopilotPanel";
 import { Button } from "@/components/shared/Button";
 import { ActionButton } from "@/components/shared/ActionButton";
+import { VoiceProvider } from "@/components/voice/VoiceContext";
+import { VoiceSettingsControl } from "@/components/voice/VoiceSettingsControl";
 import {
   TranscriptSegment,
   AIIntervention,
@@ -316,60 +318,63 @@ export default function LiveMeetingPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-100 overflow-hidden select-none">
-      {/* 1. MEETING HEADER */}
-      <div className="h-12 bg-slate-900 text-white px-4 flex items-center justify-between shrink-0 border-b border-slate-800 z-10">
-        {/* Left: Meeting Identification & Duration */}
-        <div className="flex items-center space-x-3 min-w-0">
-          <div className="flex items-center space-x-1.5 shrink-0">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                isPaused ? "bg-amber-400" : "bg-rose-500 animate-pulse"
-              }`}
-            />
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-rose-400">
-              {isPaused ? "MEETING PAUSED" : "LIVE CONSULTATION"}
+    <VoiceProvider>
+      <div className="flex flex-col h-full bg-slate-100 overflow-hidden select-none">
+        {/* 1. MEETING HEADER */}
+        <div className="h-12 bg-slate-900 text-white px-4 flex items-center justify-between shrink-0 border-b border-slate-800 z-10">
+          {/* Left: Meeting Identification & Duration */}
+          <div className="flex items-center space-x-3 min-w-0">
+            <div className="flex items-center space-x-1.5 shrink-0">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  isPaused ? "bg-amber-400" : "bg-rose-500 animate-pulse"
+                }`}
+              />
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-rose-400">
+                {isPaused ? "MEETING PAUSED" : "LIVE CONSULTATION"}
+              </span>
+            </div>
+
+            <span className="text-slate-700 hidden sm:inline">|</span>
+
+            <span className="text-xs font-bold text-white truncate">
+              {initialMeeting.borrowerNames || initialMeeting.title}
+            </span>
+
+            <span className="text-slate-700 hidden md:inline">•</span>
+
+            <span className="text-xs text-slate-300 hidden md:inline truncate">
+              Home Purchase Consultation
+            </span>
+
+            <span className="text-slate-700 hidden lg:inline">•</span>
+
+            {/* Duration Counter */}
+            <div className="flex items-center text-xs font-mono text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+              <Clock className="h-3 w-3 mr-1 text-slate-400" />
+              <span>{formatDuration(secondsElapsed)}</span>
+            </div>
+
+            {/* Recording / Simulated Status Label */}
+            <span className="hidden xl:inline-flex items-center text-[10px] text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
+              <Volume2 className="h-3 w-3 mr-1 text-emerald-400" />
+              Simulated Transcription Active
             </span>
           </div>
 
-          <span className="text-slate-700 hidden sm:inline">|</span>
+          {/* Right: Voice Settings, Reset, Pause & End Meeting Actions */}
+          <div className="flex items-center space-x-2 shrink-0">
+            <VoiceSettingsControl />
 
-          <span className="text-xs font-bold text-white truncate">
-            {initialMeeting.borrowerNames || initialMeeting.title}
-          </span>
-
-          <span className="text-slate-700 hidden md:inline">•</span>
-
-          <span className="text-xs text-slate-300 hidden md:inline truncate">
-            Home Purchase Consultation
-          </span>
-
-          <span className="text-slate-700 hidden lg:inline">•</span>
-
-          {/* Duration Counter */}
-          <div className="flex items-center text-xs font-mono text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
-            <Clock className="h-3 w-3 mr-1 text-slate-400" />
-            <span>{formatDuration(secondsElapsed)}</span>
-          </div>
-
-          {/* Recording / Simulated Status Label */}
-          <span className="hidden xl:inline-flex items-center text-[10px] text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
-            <Volume2 className="h-3 w-3 mr-1 text-emerald-400" />
-            Simulated Transcription Active
-          </span>
-        </div>
-
-        {/* Right: Pause & End Meeting Actions */}
-        <div className="flex items-center space-x-2 shrink-0">
-          <button
-            type="button"
-            onClick={handleResetSession}
-            title="Reset scenario to seed state"
-            className="hidden sm:flex items-center space-x-1 px-2 py-1 text-[11px] rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer"
-          >
-            <RotateCcw className="h-3 w-3" />
-            <span>Reset Demo</span>
-          </button>
+            <button
+              type="button"
+              onClick={handleResetSession}
+              title="Reset scenario to seed state"
+              className="hidden sm:flex items-center space-x-1 px-2 py-1 text-[11px] rounded bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer"
+            >
+              <RotateCcw className="h-3 w-3" />
+              <span>Reset Demo</span>
+            </button>
 
           <button
             type="button"
@@ -607,5 +612,6 @@ export default function LiveMeetingPage() {
         </div>
       )}
     </div>
+  </VoiceProvider>
   );
 }

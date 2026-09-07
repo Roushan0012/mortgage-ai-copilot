@@ -171,10 +171,10 @@ export const DETERMINISTIC_COMPLIANCE_RULES: ComplianceRule[] = [
     reason:
       "Ability-to-Repay standards mandate third-party documentation for qualifying income. Stated income cannot be counted toward DTI until verified via 2 years of tax returns (Schedule C/1040) or W-2s.",
     suggestedResponse:
-      "We will note your stated monthly income of $8,000, and will request your 2024 and 2025 tax returns to confirm the qualifying income for underwriting.",
+      "Let's separate the income you've reported from the income we can verify with documentation. We will note your stated monthly income of $8,000, and will request your tax returns to confirm the qualifying income for underwriting.",
     correctiveGuidance:
       "Record stated income separately from verified income. Request 2 years of tax returns and bank statements.",
-    availableActions: ["mark_verification", "ask_question", "view_evidence"],
+    availableActions: ["accept", "mark_verification", "ask_question", "view_evidence"],
     escalationRequired: false,
     generatedSystemAction: "FLAG_UNVERIFIED_INCOME_CONDITION",
     riskIfIncorrect: "Incorrectly treating unverified income as verified could distort affordability assessment.",
